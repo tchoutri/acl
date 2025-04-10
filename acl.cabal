@@ -1,0 +1,72 @@
+cabal-version:      3.4
+name:               acl
+version:            0.1.0.0
+-- synopsis:
+-- description:
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Théophile Choutri de Tarlé
+maintainer:         theophile@choutri.eu
+-- copyright:
+category:           ACL
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common extensions
+  default-extensions:
+    DataKinds
+    DeriveAnyClass
+    DerivingVia
+    DuplicateRecordFields
+    LambdaCase
+    NoStarIsType
+    OverloadedRecordDot
+    OverloadedStrings
+    PackageImports
+    RecordWildCards
+    StrictData
+    TypeFamilies
+  default-language:   GHC2021
+common ghc-options
+  ghc-options:
+    -Wall -Wcompat -Widentities -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wpartial-fields -Wredundant-constraints
+    -fhide-source-paths -Wno-unused-do-bind -fshow-hole-constraints
+    -Wno-unticked-promoted-constructors -finfo-table-map
+
+library
+    import: extensions
+    import: ghc-options
+    exposed-modules:  
+        ACL.Check
+        ACL.Examples
+        ACL.Types.Namespace
+        ACL.Types.Object
+        ACL.Types.Relation
+        ACL.Types.RelationTuple
+        ACL.Types.RewriteRule
+        ACL.Types.User
+    build-depends:
+        base ^>=4.20.0.0
+        , text-display
+        , text
+        , vector
+        , containers
+    hs-source-dirs:   src
+    default-language: GHC2024
+
+test-suite acl-test
+    import: extensions
+    import: ghc-options
+    default-language: GHC2024
+    -- other-modules:
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.20.0.0,
+        acl,
+        tasty,
+        tasty-hunit
