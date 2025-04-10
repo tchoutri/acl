@@ -74,6 +74,7 @@ test-suite acl-test
   other-modules:
     ACL.Test.Fixtures
     ACL.Test.Utils
+    ACL.Test.RewriteRulesTest
 
   build-depends:
     acl,
