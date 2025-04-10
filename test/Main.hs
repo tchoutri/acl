@@ -1,16 +1,17 @@
 module Main (main) where
 
-import Data.Set qualified as Set
 import Data.Map.Strict qualified as Map
-import Data.Text.Display
+import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Text.Display
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import ACL.Check
-import ACL.Test.Utils
 import ACL.Test.Fixtures
+import ACL.Test.Utils
 import ACL.Types.Namespace
+import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
 import ACL.Types.User
@@ -83,17 +84,22 @@ testComputedUserSet :: Assertion
 testComputedUserSet = do
   let relationTuples =
         Set.fromList
-          [ RelationTuple beatriceAccountObject "admin" sncfOrgUser
+          [ RelationTuple sncfOrgObject "admin" beatriceAccountUser
           ]
 
-  sncfAdminRelation <-
+  assertEqual
+    "Could not find user Beatrice when evaluating computed user set child rule"
+    (Set.singleton (UserId "Beatrice"))
+    (expandRewriteRuleChild relationTuples (sncfOrgObject, "member") (ComputedUserSet "admin"))
+
+  sncfAdminRewriteRules <-
     assertJust $
-      Map.lookup ("admin" :: Text) sncfOrgObject.namespace.relations
+      Map.lookup ("member" :: Text) sncfOrgObject.namespace.relations
 
   assertEqual
-    "Could not find ACL for computed user set"
+    "Could not find user Beatrice for computed user set"
     (Set.singleton (UserId "Beatrice"))
-    (Set.unions $ Set.map (expandRewriteRule relationTuples (sncfOrgObject, "member")) sncfAdminRelation)
+    (expandRewriteRule relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules)
 
   assertBool
     "Beatrice can be seen as a member of SNCF due to being Admin"

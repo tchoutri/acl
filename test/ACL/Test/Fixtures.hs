@@ -63,14 +63,14 @@ lamiaAccountUser = UserId "Lamia"
 
 organisationNamespace :: Namespace
 organisationNamespace =
-  let r1 = Union (Set.fromList [This, ComputedUserSet "admin"])
-      r2 = Union (Set.singleton (This))
+  let memberRule = Union (Set.fromList [This, ComputedUserSet "admin"])
+      adminRule = Union (Set.singleton (This))
    in Namespace
         { name = "organisation"
         , relations =
             Map.fromList
-              [ ("member", r1)
-              , ("admin", r2)
+              [ ("member", memberRule)
+              , ("admin", adminRule)
               ]
         }
 
