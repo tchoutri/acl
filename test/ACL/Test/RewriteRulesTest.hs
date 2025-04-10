@@ -12,7 +12,6 @@ import ACL.Check
 import ACL.Test.Fixtures
 import ACL.Test.Utils
 import ACL.Types.Namespace
-import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
 import ACL.Types.User
@@ -36,7 +35,7 @@ testSimpleRewriteRule = do
 
   assertBool
     "Beatrice is not member of SNCF"
-    (check relationTuples (sncfOrgObject, "member") (UserId "Beatrice"))
+    (check namespaces relationTuples (sncfOrgObject, "member") (User (EndUser "user" "Beatrice")))
 
 testComputedUserSet :: Assertion
 testComputedUserSet = do
@@ -47,21 +46,21 @@ testComputedUserSet = do
 
   assertEqual
     "Could not find user Beatrice when evaluating computed user set child rule"
-    (Set.singleton (UserId "Beatrice"))
-    (expandRewriteRuleChild relationTuples (sncfOrgObject, "member") (ComputedUserSet "admin"))
+    (Set.singleton (User (EndUser "user" "Beatrice")))
+    (expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (ComputedUserSet "admin"))
 
   sncfAdminRewriteRules <-
     assertJust $
-      Map.lookup ("member" :: Text) sncfOrgObject.namespace.relations
+      Map.lookup ("member" :: Text) organisationNamespace.relations
 
   assertEqual
     "Could not find user Beatrice for computed user set"
-    (Set.singleton (UserId "Beatrice"))
-    (expandRewriteRule relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules)
+    (Set.singleton (User (EndUser "user" "Beatrice")))
+    (expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules)
 
   assertBool
     "Beatrice can be seen as a member of SNCF due to being Admin"
-    (check relationTuples (sncfOrgObject, "member") beatriceAccountUser)
+    (check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountUser)
 
 testTupleToUserset :: Assertion
 testTupleToUserset = do
@@ -74,8 +73,8 @@ testTupleToUserset = do
 
   assertEqual
     "Tupleset Child rule is not correctly expanded"
-    (Set.singleton (EndUser "user" "Charlie"))
-    (expandRewriteRuleChild relationTuples (enterprisePlanObject, "subscriber_member") (TupleSetChild "member" "subscriber"))
+    (Set.singleton (User (EndUser "user" "Charlie")))
+    (expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") (TupleSetChild "member" "subscriber"))
 
 testComplexTupleMatch :: (String -> IO ()) -> Assertion
 testComplexTupleMatch step = do
@@ -101,16 +100,16 @@ testComplexTupleMatch step = do
   step (Text.unpack $ "Enterprise plan contains SEBankID (" <> display step1Relation <> ")")
   assertBool
     "Enterprise plan does not grants access to SE Bank ID"
-    (check relationTuples (seBankIDFeature, "associated_plan") enterprisePlanUser)
+    (check namespaces relationTuples (seBankIDFeature, "associated_plan") enterprisePlanUser)
 
   let step2Relation = RelationTuple enterprisePlanObject "subscriber" sncfOrgUser
   step (Text.unpack $ "SNCF is subscribed to plan Enterprise (" <> display step2Relation <> ")")
   assertBool
     ("SNCF is not subscribed to Enterprise plan")
-    (check relationTuples (enterprisePlanObject, "subscriber") sncfOrgUser)
+    (check namespaces relationTuples (enterprisePlanObject, "subscriber") sncfOrgUser)
 
   let step3Relation = RelationTuple seBankIDFeature "subscriber" charlieAccountUser
   step (Text.unpack $ "Charlie can access SE Bank ID through SNCF's subscription to Enterprise plan" <> display step3Relation <> ")")
   assertBool
     "Charlie cannot access SE Bank ID through SNCF's subscription to Enterprise plan"
-    (check relationTuples (seBankIDFeature, "can_access") charlieAccountUser)
+    (check namespaces relationTuples (seBankIDFeature, "can_access") charlieAccountUser)

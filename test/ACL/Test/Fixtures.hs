@@ -1,5 +1,6 @@
 module ACL.Test.Fixtures where
 
+import Data.Map (Map)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Vector (Vector)
@@ -31,18 +32,18 @@ import ACL.Types.User
 userNamespace :: Namespace
 userNamespace =
   Namespace
-    { name = "users"
+    { namespaceId = "users"
     , relations = Map.empty
     }
 
 beatriceAccountObject :: Object
-beatriceAccountObject = Object userNamespace "Beatrice"
+beatriceAccountObject = Object "user" "Beatrice"
 
 charlieAccountObject :: Object
-charlieAccountObject = Object userNamespace "Charlie"
+charlieAccountObject = Object "user" "Charlie"
 
 lamiaAccountObject :: Object
-lamiaAccountObject = Object userNamespace "Lamia"
+lamiaAccountObject = Object "user" "Lamia"
 
 users :: Vector Object
 users =
@@ -53,20 +54,20 @@ users =
     ]
 
 beatriceAccountUser :: User
-beatriceAccountUser = UserId "Beatrice"
+beatriceAccountUser = User $ EndUser "users" "Beatrice"
 
 charlieAccountUser :: User
-charlieAccountUser = UserId "Charlie"
+charlieAccountUser = User $ EndUser "users" "Charlie"
 
 lamiaAccountUser :: User
-lamiaAccountUser = UserId "Lamia"
+lamiaAccountUser = User $ EndUser "users" "Lamia"
 
 organisationNamespace :: Namespace
 organisationNamespace =
   let memberRule = Union (Set.fromList [This, ComputedUserSet "admin"])
       adminRule = Union (Set.singleton (This))
    in Namespace
-        { name = "organisation"
+        { namespaceId = "organisation"
         , relations =
             Map.fromList
               [ ("member", memberRule)
@@ -75,13 +76,13 @@ organisationNamespace =
         }
 
 scriveOrgObject :: Object
-scriveOrgObject = Object organisationNamespace "scrive"
+scriveOrgObject = Object "organisation" "scrive"
 
 sncfOrgObject :: Object
-sncfOrgObject = Object organisationNamespace "sncf"
+sncfOrgObject = Object "organisation" "sncf"
 
 trenitaliaOrgObject :: Object
-trenitaliaOrgObject = Object organisationNamespace "trenitalia"
+trenitaliaOrgObject = Object "organisation" "trenitalia"
 
 organisations :: Vector Object
 organisations =
@@ -97,17 +98,17 @@ scriveOrgUser =
    in UserSet $ UserSetTuple scriveOrgObject (Just r)
 
 sncfOrgUser :: User
-sncfOrgUser = UserId "sncf"
+sncfOrgUser = User $ EndUser "organisation" "sncf"
 
 trenitaliaOrgUser :: User
-trenitaliaOrgUser = UserId "trenitalia"
+trenitaliaOrgUser = User $ EndUser "organisation" "trenitalia"
 
 planNamespace :: Namespace
 planNamespace =
   let r1 = Union (Set.singleton This)
       r2 = Union (Set.fromList [TupleSetChild "member" "subscriber"])
    in Namespace
-        { name = "plan"
+        { namespaceId = "plan"
         , relations =
             Map.fromList
               [ ("subscriber", r1)
@@ -116,13 +117,13 @@ planNamespace =
         }
 
 essentialsPlanObject :: Object
-essentialsPlanObject = Object planNamespace "essentials"
+essentialsPlanObject = Object "plan" "essentials"
 
 businessPlanObject :: Object
-businessPlanObject = Object planNamespace "business"
+businessPlanObject = Object "plan" "business"
 
 enterprisePlanObject :: Object
-enterprisePlanObject = Object planNamespace "enterprise"
+enterprisePlanObject = Object "plan" "enterprise"
 
 planObjects :: Vector Object
 planObjects =
@@ -133,20 +134,20 @@ planObjects =
     ]
 
 essentialsPlanUser :: User
-essentialsPlanUser = UserId "essentials"
+essentialsPlanUser = User $ EndUser "plans" "essentials"
 
 businessPlanUser :: User
-businessPlanUser = UserId "business"
+businessPlanUser = User $ EndUser "plans" "business"
 
 enterprisePlanUser :: User
-enterprisePlanUser = UserId "enterprise"
+enterprisePlanUser = User $ EndUser "plans" "enterprise"
 
 featuresNamespace :: Namespace
 featuresNamespace =
   let r1 = Union (Set.singleton This)
       r2 = Union (Set.singleton (TupleSetChild "subscriber_member" "associated_plan"))
    in Namespace
-        { name = "features"
+        { namespaceId = "features"
         , relations =
             Map.fromList
               [ ("associated_plan", r1)
@@ -155,16 +156,16 @@ featuresNamespace =
         }
 
 smsFeature :: Object
-smsFeature = Object featuresNamespace "SMS"
+smsFeature = Object "feature" "SMS"
 
 seBankIDFeature :: Object
-seBankIDFeature = Object featuresNamespace "SEBankID"
+seBankIDFeature = Object "feature" "SEBankID"
 
 noBankIDFeature :: Object
-noBankIDFeature = Object featuresNamespace "NOBankID"
+noBankIDFeature = Object "feature" "NOBankID"
 
 gatewayFeature :: Object
-gatewayFeature = Object featuresNamespace "Gateway"
+gatewayFeature = Object "feature" "Gateway"
 
 features :: Vector Object
 features =
@@ -172,4 +173,13 @@ features =
     [ smsFeature
     , seBankIDFeature
     , noBankIDFeature
+    ]
+
+namespaces :: Map NamespaceId Namespace
+namespaces =
+  Map.fromList
+    [ ("user", userNamespace)
+    , ("plan", planNamespace)
+    , ("feature", featuresNamespace)
+    , ("organisation", organisationNamespace)
     ]
