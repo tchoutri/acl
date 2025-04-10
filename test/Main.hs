@@ -1,13 +1,19 @@
 module Main (main) where
 
 import Data.Set qualified as Set
+import Data.Map.Strict qualified as Map
 import Data.Text.Display
+import Data.Text (Text)
 import Test.Tasty
 import Test.Tasty.HUnit
 
 import ACL.Check
+import ACL.Test.Utils
 import ACL.Test.Fixtures
+import ACL.Types.Namespace
 import ACL.Types.RelationTuple
+import ACL.Types.RewriteRule
+import ACL.Types.User
 
 main :: IO ()
 main =
@@ -57,28 +63,38 @@ checkTests :: TestTree
 checkTests =
   testGroup
     "Check Tests"
-    [ testCase "Simple tuple match" testSimpleTupleMatch
+    [ testCase "Simple rewrite rule evaluation" testSimpleRewriteRule
     , testCase "Computed UserSet" testComputedUserSet
     , testCase "More complex tuple match" testComplexTupleMatch
     ]
 
-testSimpleTupleMatch :: Assertion
-testSimpleTupleMatch = do
+testSimpleRewriteRule :: Assertion
+testSimpleRewriteRule = do
   let relationTuples =
         Set.fromList
-          [ RelationTuple smsFeature "associated_plan" enterprisePlanUser
+          [ RelationTuple sncfOrgObject "member" beatriceAccountUser
           ]
+
   assertBool
-    "Could not find ACL for simple match"
-    (check relationTuples (smsFeature, "associated_plan") enterprisePlanUser)
+    "Beatrice is not member of SNCF"
+    (check relationTuples (sncfOrgObject, "member") (UserId "Beatrice"))
 
 testComputedUserSet :: Assertion
 testComputedUserSet = do
   let relationTuples =
         Set.fromList
-          [ RelationTuple beatriceAccountObject "member" scriveOrgUser
-          , RelationTuple beatriceAccountObject "admin" sncfOrgUser
+          [ RelationTuple beatriceAccountObject "admin" sncfOrgUser
           ]
+
+  sncfAdminRelation <-
+    assertJust $
+      Map.lookup ("admin" :: Text) sncfOrgObject.namespace.relations
+
+  assertEqual
+    "Could not find ACL for computed user set"
+    (Set.singleton (UserId "Beatrice"))
+    (Set.unions $ Set.map (expandRewriteRule relationTuples (sncfOrgObject, "member")) sncfAdminRelation)
+
   assertBool
     "Beatrice can be seen as a member of SNCF due to being Admin"
     (check relationTuples (sncfOrgObject, "member") beatriceAccountUser)

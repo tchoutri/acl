@@ -1,14 +1,14 @@
 module ACL.Types.Namespace where
 
-import Data.Set (Set)
+import Data.Map.Strict (Map)
 import Data.Text
 import Data.Text.Display
 
-import ACL.Types.Relation (Relation)
+import ACL.Types.RewriteRule
 
 data Namespace = Namespace
   { name :: Text
-  , relations :: Set Relation
+  , relations :: Map Text RewriteRules
   }
   deriving stock (Eq, Ord, Show)
 

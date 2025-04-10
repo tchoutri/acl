@@ -1,10 +1,9 @@
 module ACL.Types.RewriteRule where
 
+import Data.Set (Set)
 import Data.Text (Text)
-import Data.Vector (Vector)
 
-data RewriteRule
-  = Union (Vector Child)
+data RewriteRules = Union (Set Child)
   deriving stock (Eq, Ord, Show)
 
 -- |

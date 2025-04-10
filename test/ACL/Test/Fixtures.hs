@@ -1,5 +1,6 @@
 module ACL.Test.Fixtures where
 
+import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Vector (Vector)
 import Data.Vector qualified as Vector
@@ -31,7 +32,7 @@ userNamespace :: Namespace
 userNamespace =
   Namespace
     { name = "users"
-    , relations = Set.empty
+    , relations = Map.empty
     }
 
 beatriceAccountObject :: Object
@@ -52,37 +53,25 @@ users =
     ]
 
 beatriceAccountUser :: User
-beatriceAccountUser = User "Beatrice" 
+beatriceAccountUser = UserId "Beatrice"
 
 charlieAccountUser :: User
-charlieAccountUser = User "Charlie" 
+charlieAccountUser = UserId "Charlie"
 
 lamiaAccountUser :: User
-lamiaAccountUser = User "Lamia" 
+lamiaAccountUser = UserId "Lamia"
 
 organisationNamespace :: Namespace
 organisationNamespace =
-  let r1 =
-        Direct $
-          MkDirectRelation
-            { relationName = "member"
-            , rewriteRules =
-                Union
-                  ( Vector.fromList
-                      [ This
-                      , ComputedUserSet "admin"
-                      ]
-                  )
-            }
-      r2 =
-        Direct $
-          MkDirectRelation
-            { relationName = "admin"
-            , rewriteRules = Union $ Vector.singleton (This)
-            }
+  let r1 = Union (Set.fromList [This, ComputedUserSet "admin"])
+      r2 = Union (Set.singleton (This))
    in Namespace
         { name = "organisation"
-        , relations = Set.fromList [r1, r2]
+        , relations =
+            Map.fromList
+              [ ("member", r1)
+              , ("admin", r2)
+              ]
         }
 
 scriveOrgObject :: Object
@@ -103,38 +92,26 @@ organisations =
     ]
 
 scriveOrgUser :: User
-scriveOrgUser = 
-  let r = Direct $ MkDirectRelation "member" (Union $ Vector.singleton This)
+scriveOrgUser =
+  let r = Relation "member" (Union $ Set.singleton This)
    in UserSet $ UserSetTuple scriveOrgObject (Just r)
 
 sncfOrgUser :: User
-sncfOrgUser = User "sncf"
+sncfOrgUser = UserId "sncf"
 
 trenitaliaOrgUser :: User
-trenitaliaOrgUser = User "trenitalia"
+trenitaliaOrgUser = UserId "trenitalia"
 
 planNamespace :: Namespace
 planNamespace =
-  let r1 =
-        Direct $
-          MkDirectRelation
-            { relationName = "subscriber"
-            , rewriteRules =
-                Union (Vector.singleton This)
-            }
-      r2 =
-        TupleSet $
-          MkTupleSetRelation
-            { relationName = "subscriber_member"
-            , tupleSetRelation = "member"
-            , userSetRelation = "subscriber"
-            }
+  let r1 = Union (Set.singleton This)
+      r2 = Union (Set.fromList [TupleSetChild "member" "subscriber"])
    in Namespace
         { name = "plan"
         , relations =
-            Set.fromList
-              [ r1
-              , r2
+            Map.fromList
+              [ ("subscriber", r1)
+              , ("subscriber_member", r2)
               ]
         }
 
@@ -156,35 +133,24 @@ planObjects =
     ]
 
 essentialsPlanUser :: User
-essentialsPlanUser = User "essentials"
+essentialsPlanUser = UserId "essentials"
 
 businessPlanUser :: User
-businessPlanUser = User "business"
+businessPlanUser = UserId "business"
 
 enterprisePlanUser :: User
-enterprisePlanUser = User "enterprise"
+enterprisePlanUser = UserId "enterprise"
 
 featuresNamespace :: Namespace
 featuresNamespace =
-  let r1 =
-        Direct
-          MkDirectRelation
-            { relationName = "associated_plan"
-            , rewriteRules = Union (Vector.singleton This)
-            }
-      r2 =
-        TupleSet
-          MkTupleSetRelation
-            { relationName = "can_access"
-            , tupleSetRelation = "subscriber_member"
-            , userSetRelation = "associated_plan"
-            }
+  let r1 = Union (Set.singleton This)
+      r2 = Union (Set.singleton (TupleSetChild "subscriber_member" "associated_plan"))
    in Namespace
         { name = "features"
         , relations =
-            Set.fromList
-              [ r1
-              , r2
+            Map.fromList
+              [ ("associated_plan", r1)
+              , ("can_access", r2)
               ]
         }
 
