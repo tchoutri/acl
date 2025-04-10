@@ -13,7 +13,8 @@ data RewriteRule
 --  * ComputedUserSet "editor" to allow editors to view
 --  * TupleSet "member" from "subscriber"
 data Child
-  = This -- _this
+  = -- | _this
+    This
   | -- | Relation to the same object
     ComputedUserSet
       Text

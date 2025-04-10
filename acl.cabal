@@ -40,7 +40,6 @@ library
     import: ghc-options
     exposed-modules:  
         ACL.Check
-        ACL.Examples
         ACL.Types.Namespace
         ACL.Types.Object
         ACL.Types.Relation
@@ -60,13 +59,16 @@ test-suite acl-test
     import: extensions
     import: ghc-options
     default-language: GHC2024
-    -- other-modules:
-    -- other-extensions:
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Main.hs
+    other-modules:
+        ACL.Test.Fixtures
     build-depends:
         base ^>=4.20.0.0,
         acl,
         tasty,
-        tasty-hunit
+        text-display,
+        tasty-hunit,
+        containers,
+        vector

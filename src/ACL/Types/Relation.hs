@@ -2,7 +2,7 @@ module ACL.Types.Relation where
 
 import Data.Text (Text)
 import Data.Text.Display
-import Data.Vector (Vector)
+import GHC.Records
 
 import ACL.Types.RewriteRule
 
@@ -15,10 +15,13 @@ instance Display Relation where
   displayBuilder (Direct r) = displayBuilder r.relationName
   displayBuilder (TupleSet t) = displayBuilder $ t.relationName
 
+instance HasField "relationName" Relation Text where
+  getField (Direct directRelation) = directRelation.relationName
+  getField (TupleSet tupleSet) = tupleSet.relationName
+
 data DirectRelation = MkDirectRelation
   { relationName :: Text
-  , target :: Text
-  , rewriteRules :: Vector RewriteRule
+  , rewriteRules :: RewriteRule
   }
   deriving stock (Eq, Ord, Show)
 

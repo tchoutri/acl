@@ -7,6 +7,9 @@ clean: ## Clean
 repl: ## Start a REPL
 	@cabal repl acl
 
+test: ## Run the tests
+	@cabal test
+
 lint: ## Run hlint
 	@find -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 

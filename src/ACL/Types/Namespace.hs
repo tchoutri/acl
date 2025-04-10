@@ -1,14 +1,14 @@
 module ACL.Types.Namespace where
 
+import Data.Set (Set)
 import Data.Text
 import Data.Text.Display
-import Data.Vector (Vector)
 
 import ACL.Types.Relation (Relation)
 
 data Namespace = Namespace
   { name :: Text
-  , relations :: Vector Relation
+  , relations :: Set Relation
   }
   deriving stock (Eq, Ord, Show)
 
