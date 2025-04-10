@@ -4,6 +4,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Display
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -15,14 +16,14 @@ import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
 import ACL.Types.User
-import Data.Text.Display
 
 checkTests :: TestTree
 checkTests =
   testGroup
     "Check Tests"
     [ testCase "Simple rewrite rule evaluation" testSimpleRewriteRule
-    , testCase "Computed UserSet" testComputedUserSet
+    , testCase "Computed Userset" testComputedUserSet
+    , testCase "Tuple to Userset" testTupleToUserset
     , testCaseSteps "More complex tuple match" testComplexTupleMatch
     ]
 
@@ -61,6 +62,20 @@ testComputedUserSet = do
   assertBool
     "Beatrice can be seen as a member of SNCF due to being Admin"
     (check relationTuples (sncfOrgObject, "member") beatriceAccountUser)
+
+testTupleToUserset :: Assertion
+testTupleToUserset = do
+  let relationTuples =
+        Set.fromList
+          [ RelationTuple seBankIDFeature "associated_plan" enterprisePlanUser
+          , RelationTuple enterprisePlanObject "subscriber" sncfOrgUser
+          , RelationTuple sncfOrgObject "admin" charlieAccountUser
+          ]
+
+  assertEqual
+    "Tupleset Child rule is not correctly expanded"
+    (Set.singleton (EndUser "user" "Charlie"))
+    (expandRewriteRuleChild relationTuples (enterprisePlanObject, "subscriber_member") (TupleSetChild "member" "subscriber"))
 
 testComplexTupleMatch :: (String -> IO ()) -> Assertion
 testComplexTupleMatch step = do

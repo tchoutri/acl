@@ -19,7 +19,7 @@ data Child
       Text
   | TupleSetChild
       Text
-      -- ^ Indirect relation to match
+      -- ^ Computed Relation
       Text
-      -- ^ Direct relation to match
+      -- ^ Tupleset Relation
   deriving stock (Eq, Ord, Show)

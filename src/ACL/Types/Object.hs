@@ -6,7 +6,7 @@ import Data.Text.Display
 import ACL.Types.Namespace
 
 data Object = Object
-  { namespace :: Namespace
+  { namespaceId :: NamespaceId
   , identifier :: Text
   }
   deriving stock (Eq, Ord, Show)

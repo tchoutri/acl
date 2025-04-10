@@ -1,26 +1,32 @@
 module ACL.Types.User where
 
-import Data.String
 import Data.Text (Text)
 import Data.Text.Display
 
+import ACL.Types.Namespace
 import ACL.Types.Object
 import ACL.Types.Relation (Relation)
 
-newtype UserId = MkUserId Text
-  deriving newtype (Display, Eq, IsString, Ord, Show)
+data EndUser = EndUser
+  { namespaceId :: NamespaceId
+  , useId :: Text
+  }
+  deriving stock (Eq, Ord, Show)
+
+instance Display EndUser where
+  displayBuilder (EndUser namespace identifier) = displayBuilder namespace <> ":" <> displayBuilder identifier
 
 data User
-  = UserId UserId
+  = User EndUser
   | UserSet UserSetTuple
   deriving stock (Eq, Ord, Show)
 
-isUserId :: User -> Bool
-isUserId (UserId _) = True
-isUserId _ = False
+isEndUser :: User -> Bool
+isEndUser (User _) = True
+isEndUser _ = False
 
 instance Display User where
-  displayBuilder (UserId i) = displayBuilder i
+  displayBuilder (User i) = displayBuilder i
   displayBuilder (UserSet userSet) = displayBuilder userSet
 
 data UserSetTuple = UserSetTuple
@@ -32,3 +38,10 @@ data UserSetTuple = UserSetTuple
 instance Display UserSetTuple where
   displayBuilder (UserSetTuple o mr) =
     displayBuilder o <> (maybe "" (\r -> "#" <> displayBuilder r) mr)
+
+objectToUser :: Object -> User
+objectToUser o = User (EndUser o.namespaceId o.identifier)
+
+userToObject :: User -> Object
+userToObject (User (EndUser namespace userId)) = Object namespace userId
+userToObject (UserSet (UserSetTuple object _)) = object

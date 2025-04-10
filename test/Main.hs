@@ -3,9 +3,9 @@ module Main (main) where
 import Data.Text.Display
 import Test.Tasty
 import Test.Tasty.HUnit
-import ACL.Test.RewriteRulesTest
 
 import ACL.Test.Fixtures
+import ACL.Test.RewriteRulesTest
 import ACL.Types.RelationTuple
 
 main :: IO ()
