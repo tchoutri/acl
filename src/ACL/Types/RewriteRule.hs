@@ -9,13 +9,13 @@ data RewriteRules = Union (Set Child)
 -- |
 -- Examples:
 --  * `Viewer: _this` lists all users for the <object,relation> tuple
---  * `Viewer: ComputedUserSet "editor"` to allow editors to view
+--  * `Viewer: ComputedSubjectSet "editor"` to allow editors to view
 --  * `Viewer:  TupleSet "member" from "subscriber"` to allow members of subscribers to view
 data Child
   = -- | _this
     This
   | -- | Relation to the same object
-    ComputedUserSet
+    ComputedSubjectSet
       Text
   | TupleSetChild
       Text

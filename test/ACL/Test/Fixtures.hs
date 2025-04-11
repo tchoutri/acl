@@ -10,7 +10,7 @@ import ACL.Types.Namespace
 import ACL.Types.Object
 import ACL.Types.Relation
 import ACL.Types.RewriteRule
-import ACL.Types.User
+import ACL.Types.Subject
 
 -- type user
 --
@@ -53,18 +53,18 @@ users =
     , lamiaAccountObject
     ]
 
-beatriceAccountUser :: User
-beatriceAccountUser = User $ EndUser "user" "Beatrice"
+beatriceAccountSubject :: Subject
+beatriceAccountSubject = Subject $ EndSubject "user" "Beatrice"
 
-charlieAccountUser :: User
-charlieAccountUser = User $ EndUser "user" "Charlie"
+charlieAccountSubject :: Subject
+charlieAccountSubject = Subject $ EndSubject "user" "Charlie"
 
-lamiaAccountUser :: User
-lamiaAccountUser = User $ EndUser "user" "Lamia"
+lamiaAccountSubject :: Subject
+lamiaAccountSubject = Subject $ EndSubject "user" "Lamia"
 
 organisationNamespace :: Namespace
 organisationNamespace =
-  let memberRule = Union (Set.fromList [This, ComputedUserSet "admin"])
+  let memberRule = Union (Set.fromList [This, ComputedSubjectSet "admin"])
       adminRule = Union (Set.singleton (This))
    in Namespace
         { namespaceId = "org"
@@ -92,16 +92,16 @@ organisations =
     , trenitaliaOrgObject
     ]
 
-scriveOrgUser :: User
-scriveOrgUser =
+scriveOrgSubject :: Subject
+scriveOrgSubject =
   let r = Relation "member" (Union $ Set.singleton This)
-   in UserSet $ UserSetTuple scriveOrgObject (Just r)
+   in SubjectSet $ SubjectSetTuple scriveOrgObject (Just r)
 
-sncfOrgUser :: User
-sncfOrgUser = User $ EndUser "org" "sncf"
+sncfOrgSubject :: Subject
+sncfOrgSubject = Subject $ EndSubject "org" "sncf"
 
-trenitaliaOrgUser :: User
-trenitaliaOrgUser = User $ EndUser "org" "trenitalia"
+trenitaliaOrgSubject :: Subject
+trenitaliaOrgSubject = Subject $ EndSubject "org" "trenitalia"
 
 planNamespace :: Namespace
 planNamespace =
@@ -133,14 +133,14 @@ planObjects =
     , enterprisePlanObject
     ]
 
-essentialsPlanUser :: User
-essentialsPlanUser = User $ EndUser "plan" "essentials"
+essentialsPlanSubject :: Subject
+essentialsPlanSubject = Subject $ EndSubject "plan" "essentials"
 
-businessPlanUser :: User
-businessPlanUser = User $ EndUser "plan" "business"
+businessPlanSubject :: Subject
+businessPlanSubject = Subject $ EndSubject "plan" "business"
 
-enterprisePlanUser :: User
-enterprisePlanUser = User $ EndUser "plan" "enterprise"
+enterprisePlanSubject :: Subject
+enterprisePlanSubject = Subject $ EndSubject "plan" "enterprise"
 
 featuresNamespace :: Namespace
 featuresNamespace =

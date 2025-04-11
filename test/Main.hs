@@ -22,30 +22,30 @@ displayTests :: TestTree
 displayTests =
   testGroup
     "Display Tests"
-    [ testCase "Display a object-relation-userId tuple" displayObjectRelationUserIdRelation
-    , testCase "Display a object-relation-userSet tuple" displayObjectRelationUserSetRelation
+    [ testCase "Display a object-relation-userId tuple" displayObjectRelationSubjectIdRelation
+    , testCase "Display a object-relation-userSet tuple" displayObjectRelationSubjectSetRelation
     ]
 
-displayObjectRelationUserIdRelation :: Assertion
-displayObjectRelationUserIdRelation = do
+displayObjectRelationSubjectIdRelation :: Assertion
+displayObjectRelationSubjectIdRelation = do
   let r =
         RelationTuple
           { object = scriveOrgObject
           , relationName = "member"
-          , user = beatriceAccountUser
+          , subject = beatriceAccountSubject
           }
   assertEqual
     "Relation is not properly displayed"
     "org:scrive#member@user:Beatrice"
     (display r)
 
-displayObjectRelationUserSetRelation :: Assertion
-displayObjectRelationUserSetRelation = do
+displayObjectRelationSubjectSetRelation :: Assertion
+displayObjectRelationSubjectSetRelation = do
   let r =
         RelationTuple
           { object = sncfOrgObject
           , relationName = "member"
-          , user = scriveOrgUser
+          , subject = scriveOrgSubject
           }
   assertEqual
     "Relation is not properly displayed"
