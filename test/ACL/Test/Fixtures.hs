@@ -67,7 +67,7 @@ organisationNamespace =
   let memberRule = Union (Set.fromList [This, ComputedUserSet "admin"])
       adminRule = Union (Set.singleton (This))
    in Namespace
-        { namespaceId = "organisation"
+        { namespaceId = "org"
         , relations =
             Map.fromList
               [ ("member", memberRule)
@@ -76,13 +76,13 @@ organisationNamespace =
         }
 
 scriveOrgObject :: Object
-scriveOrgObject = Object "organisation" "scrive"
+scriveOrgObject = Object "org" "scrive"
 
 sncfOrgObject :: Object
-sncfOrgObject = Object "organisation" "sncf"
+sncfOrgObject = Object "org" "sncf"
 
 trenitaliaOrgObject :: Object
-trenitaliaOrgObject = Object "organisation" "trenitalia"
+trenitaliaOrgObject = Object "org" "trenitalia"
 
 organisations :: Vector Object
 organisations =
@@ -98,10 +98,10 @@ scriveOrgUser =
    in UserSet $ UserSetTuple scriveOrgObject (Just r)
 
 sncfOrgUser :: User
-sncfOrgUser = User $ EndUser "organisation" "sncf"
+sncfOrgUser = User $ EndUser "org" "sncf"
 
 trenitaliaOrgUser :: User
-trenitaliaOrgUser = User $ EndUser "organisation" "trenitalia"
+trenitaliaOrgUser = User $ EndUser "org" "trenitalia"
 
 planNamespace :: Namespace
 planNamespace =
@@ -134,20 +134,20 @@ planObjects =
     ]
 
 essentialsPlanUser :: User
-essentialsPlanUser = User $ EndUser "plans" "essentials"
+essentialsPlanUser = User $ EndUser "plan" "essentials"
 
 businessPlanUser :: User
-businessPlanUser = User $ EndUser "plans" "business"
+businessPlanUser = User $ EndUser "plan" "business"
 
 enterprisePlanUser :: User
-enterprisePlanUser = User $ EndUser "plans" "enterprise"
+enterprisePlanUser = User $ EndUser "plan" "enterprise"
 
 featuresNamespace :: Namespace
 featuresNamespace =
   let r1 = Union (Set.singleton This)
       r2 = Union (Set.singleton (TupleSetChild "subscriber_member" "associated_plan"))
    in Namespace
-        { namespaceId = "features"
+        { namespaceId = "feature"
         , relations =
             Map.fromList
               [ ("associated_plan", r1)
@@ -181,5 +181,5 @@ namespaces =
     [ ("user", userNamespace)
     , ("plan", planNamespace)
     , ("feature", featuresNamespace)
-    , ("organisation", organisationNamespace)
+    , ("org", organisationNamespace)
     ]
