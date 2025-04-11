@@ -8,6 +8,7 @@ maintainer: theophile@choutri.eu
 category: ACL
 build-type: Simple
 extra-doc-files: CHANGELOG.md
+tested-with: GHC ==9.10.1
 
 -- extra-source-files:
 common extensions

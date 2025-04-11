@@ -1,0 +1,19 @@
+name: Linting
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+
+jobs:
+  fourmolu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: haskell-actions/run-fourmolu@@11
+      with:
+        pattern: |
+          src/**/*.hs
+          test/**/*.hs
+        version: "0.18.0.0"
