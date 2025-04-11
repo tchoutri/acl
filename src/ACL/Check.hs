@@ -46,8 +46,8 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
       & Set.filter (\r -> r.object == object && r.relationName == relationName)
       & Set.map (\r -> r.user)
   ComputedUserSet relName ->
-    let filteredRelations = Set.filter (\r -> r.relationName == relName) relationTuples
-     in Set.map (\r -> r.user) (trace (Text.unpack $ "Filtered relations on " <> relName <> ": " <> display (Set.toList filteredRelations)) filteredRelations)
+    let filteredRelations = Set.filter (\r -> r.relationName == relName && r.object == object) relationTuples
+     in Set.map (\r -> r.user) (trace (Text.unpack $ "Filtered relations on " <> display object <> "#" <> relName <> "\": " <> display (Set.toList filteredRelations)) filteredRelations)
   TupleSetChild computedRelation tuplesetRelation ->
     -- 1. Fetch all users with the (object, tuplesetRelation) key in relationTuples
     let (userSet :: Set User) =

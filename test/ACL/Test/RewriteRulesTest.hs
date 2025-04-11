@@ -30,6 +30,7 @@ testSimpleRewriteRule = do
   let relationTuples =
         Set.fromList
           [ RelationTuple sncfOrgObject "admin" beatriceAccountUser
+          , RelationTuple trenitaliaOrgObject "member" charlieAccountUser
           ]
 
   assertBool
@@ -40,7 +41,8 @@ testComputedUserSet :: Assertion
 testComputedUserSet = do
   let relationTuples =
         Set.fromList
-          [ RelationTuple sncfOrgObject "admin" beatriceAccountUser
+          [ RelationTuple scriveOrgObject "member" lamiaAccountUser
+          , RelationTuple sncfOrgObject "admin" beatriceAccountUser
           ]
 
   assertEqual
@@ -67,6 +69,8 @@ testTupleToUserset = do
         Set.fromList
           [ RelationTuple seBankIDFeature "associated_plan" enterprisePlanUser
           , RelationTuple enterprisePlanObject "subscriber" sncfOrgUser
+          , RelationTuple enterprisePlanObject "subscriber" trenitaliaOrgUser
+          , RelationTuple businessPlanObject "subscriber" scriveOrgUser
           , RelationTuple sncfOrgObject "admin" charlieAccountUser
           ]
 
