@@ -67,6 +67,7 @@ library
 test-suite acl-test
   import: extensions
   import: ghc-options
+  ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
   default-language: GHC2024
   type: exitcode-stdio-1.0
   hs-source-dirs: test

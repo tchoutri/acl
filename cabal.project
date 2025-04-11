@@ -1,3 +1,14 @@
 packages: ./
 
 with-compiler: ghc-9.10
+
+-- Profiling options
+-- profiling: True
+-- profiling-detail: late-toplevel
+-- 
+-- program-options
+--   ghc-options:
+--     -fno-prof-count-entries
+-- 
+-- package *
+--     profiling-detail: late-toplevel
