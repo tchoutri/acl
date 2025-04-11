@@ -53,9 +53,18 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
     let (userSet :: Set User) =
           trace (Text.unpack $ "Tupleset Relation: " <> display object <> "#" <> tuplesetRelation) $
             expandRewriteRuleChild namespaces relationTuples (object, "") (ComputedUserSet tuplesetRelation)
-        -- 2. Use these users as newObjects and fetch all users that have a record for <newObjects#computedRelation> in there
+        -- 2. Use these users as new ojects and fetch all users that have a record for <newObjects#computedRelation> in there
         objectSet = trace ("New objects: " <> show (Set.toList $ Set.map display userSet)) $ Set.map userToObject userSet
-        relationRules = undefined
-     in objectSet
-          & Set.map (\o -> expandRewriteRules namespaces relationTuples (o, computedRelation) relationRules)
-          & Set.unions
+        newObjectsNamespaceId = (Set.elemAt 0 objectSet).namespaceId
+        mRewriteRules = trace (Text.unpack $ "Getting rewrite rules for namespace: " <> display newObjectsNamespaceId) $
+              case Map.lookup newObjectsNamespaceId namespaces of
+                Nothing -> Nothing
+                Just namespace -> case Map.lookup computedRelation namespace.relations of
+                  Nothing -> Nothing
+                  Just newRewriteRules -> Just newRewriteRules
+     in case mRewriteRules of
+          Nothing -> Set.empty
+          Just rewriteRules -> 
+             objectSet
+                  & Set.map (\o -> expandRewriteRules namespaces relationTuples (o, computedRelation) rewriteRules)
+                  & Set.unions
