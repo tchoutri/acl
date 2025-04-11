@@ -36,7 +36,7 @@ displayObjectRelationUserIdRelation = do
           }
   assertEqual
     "Relation is not properly displayed"
-    "organisation:scrive#member@users:Beatrice"
+    "organisation:scrive#member@user:Beatrice"
     (display r)
 
 displayObjectRelationUserSetRelation :: Assertion

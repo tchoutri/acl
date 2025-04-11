@@ -32,7 +32,7 @@ import ACL.Types.User
 userNamespace :: Namespace
 userNamespace =
   Namespace
-    { namespaceId = "users"
+    { namespaceId = "user"
     , relations = Map.empty
     }
 
@@ -54,13 +54,13 @@ users =
     ]
 
 beatriceAccountUser :: User
-beatriceAccountUser = User $ EndUser "users" "Beatrice"
+beatriceAccountUser = User $ EndUser "user" "Beatrice"
 
 charlieAccountUser :: User
-charlieAccountUser = User $ EndUser "users" "Charlie"
+charlieAccountUser = User $ EndUser "user" "Charlie"
 
 lamiaAccountUser :: User
-lamiaAccountUser = User $ EndUser "users" "Lamia"
+lamiaAccountUser = User $ EndUser "user" "Lamia"
 
 organisationNamespace :: Namespace
 organisationNamespace =

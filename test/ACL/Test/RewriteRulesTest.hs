@@ -14,7 +14,6 @@ import ACL.Test.Utils
 import ACL.Types.Namespace
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
-import ACL.Types.User
 
 checkTests :: TestTree
 checkTests =
@@ -30,12 +29,12 @@ testSimpleRewriteRule :: Assertion
 testSimpleRewriteRule = do
   let relationTuples =
         Set.fromList
-          [ RelationTuple sncfOrgObject "member" beatriceAccountUser
+          [ RelationTuple sncfOrgObject "admin" beatriceAccountUser
           ]
 
   assertBool
     "Beatrice is not member of SNCF"
-    (check namespaces relationTuples (sncfOrgObject, "member") (User (EndUser "user" "Beatrice")))
+    (check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountUser)
 
 testComputedUserSet :: Assertion
 testComputedUserSet = do
@@ -46,7 +45,7 @@ testComputedUserSet = do
 
   assertEqual
     "Could not find user Beatrice when evaluating computed user set child rule"
-    (Set.singleton (User (EndUser "user" "Beatrice")))
+    (Set.singleton beatriceAccountUser)
     (expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (ComputedUserSet "admin"))
 
   sncfAdminRewriteRules <-
@@ -55,7 +54,7 @@ testComputedUserSet = do
 
   assertEqual
     "Could not find user Beatrice for computed user set"
-    (Set.singleton (User (EndUser "user" "Beatrice")))
+    (Set.singleton beatriceAccountUser)
     (expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules)
 
   assertBool
@@ -73,7 +72,7 @@ testTupleToUserset = do
 
   assertEqual
     "Tupleset Child rule is not correctly expanded"
-    (Set.singleton (User (EndUser "user" "Charlie")))
+    (Set.singleton charlieAccountUser)
     (expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") (TupleSetChild "member" "subscriber"))
 
 testComplexTupleMatch :: (String -> IO ()) -> Assertion
