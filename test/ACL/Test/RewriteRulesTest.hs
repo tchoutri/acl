@@ -22,7 +22,7 @@ checkTests =
     [ testCase "Simple rewrite rule evaluation" testSimpleRewriteRule
     , testCase "Computed Subjectset" testComputedSubjectSet
     , testCase "Tuple to Subjectset" testTupleToSubjectset
-    , testCaseSteps "More complex tuple match" testComplexTupleMatch
+    , testCase "Transitive access to a feature by subscribers' members" testTransitiveAccessBySubscriberMembers
     ]
 
 testSimpleRewriteRule :: Assertion
@@ -79,12 +79,13 @@ testTupleToSubjectset = do
     (Set.singleton charlieAccountSubject)
     (expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") (TupleSetChild "member" "subscriber"))
 
-testComplexTupleMatch :: (String -> IO ()) -> Assertion
-testComplexTupleMatch step = do
+testTransitiveAccessBySubscriberMembers :: Assertion
+testTransitiveAccessBySubscriberMembers = do
   let relationTuples =
         Set.fromList
           [ -- features belonging to plans
             RelationTuple smsFeature "associated_plan" businessPlanSubject
+          , RelationTuple gatewayFeature "associated_plan" businessPlanSubject
           , RelationTuple smsFeature "associated_plan" enterprisePlanSubject
           , RelationTuple seBankIDFeature "associated_plan" enterprisePlanSubject
           , RelationTuple noBankIDFeature "associated_plan" enterprisePlanSubject
@@ -100,19 +101,16 @@ testComplexTupleMatch step = do
           ]
 
   let step1Relation = RelationTuple seBankIDFeature "associated_plan" enterprisePlanSubject
-  step (Text.unpack $ "Enterprise plan contains SEBankID (" <> display step1Relation <> ")")
   assertBool
-    "Enterprise plan does not grants access to SE Bank ID"
+    (Text.unpack $ "Enterprise plan contains SEBankID (" <> display step1Relation <> ")")
     (check namespaces relationTuples (seBankIDFeature, "associated_plan") enterprisePlanSubject)
 
   let step2Relation = RelationTuple enterprisePlanObject "subscriber" sncfOrgSubject
-  step (Text.unpack $ "SNCF is subscribed to plan Enterprise (" <> display step2Relation <> ")")
   assertBool
-    ("SNCF is not subscribed to Enterprise plan")
+    (Text.unpack $ "SNCF is subscribed to plan Enterprise (" <> display step2Relation <> ")")
     (check namespaces relationTuples (enterprisePlanObject, "subscriber") sncfOrgSubject)
 
   let step3Relation = RelationTuple seBankIDFeature "subscriber" charlieAccountSubject
-  step (Text.unpack $ "Charlie can access SE Bank ID through SNCF's subscription to Enterprise plan" <> display step3Relation <> ")")
   assertBool
-    "Charlie cannot access SE Bank ID through SNCF's subscription to Enterprise plan"
+    (Text.unpack $ "Charlie can access SE Bank ID through SNCF's subscription to Enterprise plan" <> display step3Relation <> ")")
     (check namespaces relationTuples (seBankIDFeature, "can_access") charlieAccountSubject)

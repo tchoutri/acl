@@ -1,10 +1,46 @@
-module ACL.Test.Fixtures where
+module ACL.Test.Fixtures
+  ( -- ** Organisations
+
+    -- *** Objects
+    scriveOrgObject
+  , sncfOrgObject
+  , trenitaliaOrgObject
+
+    -- *** Subjects
+  , scriveOrgSubject
+  , sncfOrgSubject
+  , trenitaliaOrgSubject
+
+    -- ** Accounts
+
+    -- *** Objects
+  , beatriceAccountSubject
+  , charlieAccountSubject
+  , lamiaAccountSubject
+  , namespaces
+  , organisationNamespace
+
+    -- ** Features
+  , seBankIDFeature
+  , smsFeature
+  , noBankIDFeature
+  , gatewayFeature
+
+    -- ** Plans
+
+    -- *** Objects
+  , enterprisePlanObject
+  , businessPlanObject
+  , essentialsPlanObject
+
+    -- *** Subjects
+  , enterprisePlanSubject
+  , businessPlanSubject
+  ) where
 
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
-import Data.Vector (Vector)
-import Data.Vector qualified as Vector
 
 import ACL.Types.Namespace
 import ACL.Types.Object
@@ -36,23 +72,6 @@ userNamespace =
     , relations = Map.empty
     }
 
-beatriceAccountObject :: Object
-beatriceAccountObject = Object "user" "Beatrice"
-
-charlieAccountObject :: Object
-charlieAccountObject = Object "user" "Charlie"
-
-lamiaAccountObject :: Object
-lamiaAccountObject = Object "user" "Lamia"
-
-users :: Vector Object
-users =
-  Vector.fromList
-    [ beatriceAccountObject
-    , charlieAccountObject
-    , lamiaAccountObject
-    ]
-
 beatriceAccountSubject :: Subject
 beatriceAccountSubject = Subject $ EndSubject "user" "Beatrice"
 
@@ -83,14 +102,6 @@ sncfOrgObject = Object "org" "sncf"
 
 trenitaliaOrgObject :: Object
 trenitaliaOrgObject = Object "org" "trenitalia"
-
-organisations :: Vector Object
-organisations =
-  Vector.fromList
-    [ scriveOrgObject
-    , sncfOrgObject
-    , trenitaliaOrgObject
-    ]
 
 scriveOrgSubject :: Subject
 scriveOrgSubject =
@@ -125,17 +136,6 @@ businessPlanObject = Object "plan" "business"
 enterprisePlanObject :: Object
 enterprisePlanObject = Object "plan" "enterprise"
 
-planObjects :: Vector Object
-planObjects =
-  Vector.fromList
-    [ essentialsPlanObject
-    , businessPlanObject
-    , enterprisePlanObject
-    ]
-
-essentialsPlanSubject :: Subject
-essentialsPlanSubject = Subject $ EndSubject "plan" "essentials"
-
 businessPlanSubject :: Subject
 businessPlanSubject = Subject $ EndSubject "plan" "business"
 
@@ -166,14 +166,6 @@ noBankIDFeature = Object "feature" "NOBankID"
 
 gatewayFeature :: Object
 gatewayFeature = Object "feature" "Gateway"
-
-features :: Vector Object
-features =
-  Vector.fromList
-    [ smsFeature
-    , seBankIDFeature
-    , noBankIDFeature
-    ]
 
 namespaces :: Map NamespaceId Namespace
 namespaces =

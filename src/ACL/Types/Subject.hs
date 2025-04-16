@@ -27,7 +27,7 @@ isEndSubject _ = False
 
 instance Display Subject where
   displayBuilder (Subject i) = displayBuilder i
-  displayBuilder (SubjectSet userSet) = displayBuilder userSet
+  displayBuilder (SubjectSet subjectSet) = displayBuilder subjectSet
 
 data SubjectSetTuple = SubjectSetTuple
   { object :: Object

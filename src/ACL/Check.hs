@@ -47,10 +47,10 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
      in Set.map (\r -> r.subject) filteredRelations
   TupleSetChild computedRelation tuplesetRelation ->
     -- 1. Fetch all users with the (object, tuplesetRelation) key in relationTuples
-    let (userSet :: Set Subject) =
+    let (subjectSet :: Set Subject) =
           expandRewriteRuleChild namespaces relationTuples (object, "") (ComputedSubjectSet tuplesetRelation)
         -- 2. Use these users as new ojects and fetch all users that have a record for <newObjects#computedRelation> in there
-        objectSet = Set.map userToObject userSet
+        objectSet = Set.map userToObject subjectSet
         newObjectsNamespaceId = (Set.elemAt 0 objectSet).namespaceId
         mRewriteRules =
           case Map.lookup newObjectsNamespaceId namespaces of

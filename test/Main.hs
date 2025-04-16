@@ -23,7 +23,7 @@ displayTests =
   testGroup
     "Display Tests"
     [ testCase "Display a object-relation-userId tuple" displayObjectRelationSubjectIdRelation
-    , testCase "Display a object-relation-userSet tuple" displayObjectRelationSubjectSetRelation
+    , testCase "Display a object-relation-subjectSet tuple" displayObjectRelationSubjectSetRelation
     ]
 
 displayObjectRelationSubjectIdRelation :: Assertion
