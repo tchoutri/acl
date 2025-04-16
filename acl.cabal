@@ -19,8 +19,10 @@ common extensions
     DuplicateRecordFields
     LambdaCase
     NoStarIsType
+    MagicHash
     OverloadedRecordDot
     OverloadedStrings
+    OverloadedLabels
     PackageImports
     RecordWildCards
     StrictData
@@ -49,6 +51,7 @@ library
   exposed-modules:
     ACL.Check
     ACL.Types.Namespace
+    ACL.Types.NamespaceId
     ACL.Types.Object
     ACL.Types.Relation
     ACL.Types.RelationTuple
@@ -61,6 +64,7 @@ library
     text,
     text-display,
     vector,
+    optics-core,
 
   hs-source-dirs: src
   default-language: GHC2024
@@ -77,6 +81,9 @@ test-suite acl-test
     ACL.Test.Fixtures
     ACL.Test.Utils
     ACL.Test.RewriteRulesTest
+    ACL.Test.RewriteRulesTest.OrgsPlansTest
+    ACL.Test.RewriteRulesTest.FolderDocumentsTest
+    ACL.Test.DisplayTest
 
   build-depends:
     acl,

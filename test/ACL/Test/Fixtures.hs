@@ -5,6 +5,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 
 import ACL.Types.Namespace
+import ACL.Types.NamespaceId
 import ACL.Types.Object
 import ACL.Types.Relation
 import ACL.Types.RewriteRule
@@ -36,8 +37,8 @@ userNamespace =
 
 organisationNamespace :: Namespace
 organisationNamespace =
-  let memberRule = Union (Set.fromList [This, ComputedSubjectSet "admin"])
-      adminRule = Union (Set.singleton (This))
+  let memberRule = Union (Set.fromList [This "user", ComputedSubjectSet "admin"])
+      adminRule = Union (Set.singleton (This "user"))
    in Namespace
         { namespaceId = "org"
         , relations =
@@ -52,7 +53,7 @@ trenitaliaOrgObject = Object "org" "trenitalia"
 
 scriveOrgSubject :: Subject
 scriveOrgSubject =
-  let r = Relation "member" (Union $ Set.singleton This)
+  let r = Relation "member" (Union $ Set.singleton (This "user"))
       scriveOrgObject = Object "org" "scrive"
    in SubjectSet $ SubjectSetTuple scriveOrgObject (Just r)
 
@@ -64,7 +65,7 @@ trenitaliaOrgSubject = Subject $ EndSubject "org" "trenitalia"
 
 planNamespace :: Namespace
 planNamespace =
-  let r1 = Union (Set.singleton This)
+  let r1 = Union (Set.singleton (This "org"))
       r2 = Union (Set.fromList [TupleSetChild "member" "subscriber"])
    in Namespace
         { namespaceId = "plan"
@@ -77,7 +78,7 @@ planNamespace =
 
 featuresNamespace :: Namespace
 featuresNamespace =
-  let r1 = Union (Set.singleton This)
+  let r1 = Union (Set.singleton (This "plan"))
       r2 = Union (Set.singleton (TupleSetChild "subscriber_member" "associated_plan"))
    in Namespace
         { namespaceId = "feature"

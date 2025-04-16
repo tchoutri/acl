@@ -3,7 +3,7 @@ module ACL.Types.Object where
 import Data.Text (Text)
 import Data.Text.Display
 
-import ACL.Types.Namespace
+import ACL.Types.NamespaceId (NamespaceId)
 
 data Object = Object
   { namespaceId :: NamespaceId

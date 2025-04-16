@@ -1,13 +1,14 @@
 module ACL.Check where
 
-import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Optics.Core
 
 import ACL.Types.Namespace
+import ACL.Types.NamespaceId
 import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
@@ -38,10 +39,18 @@ expandRewriteRules namespaces relations needle (Union children) =
 
 expandRewriteRuleChild :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Child -> Set Subject
 expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
-  This ->
+  This targetNamepace ->
     relationTuples
-      & Set.filter (\r -> r.object == object && r.relationName == relationName)
-      & Set.map (\r -> r.subject)
+      & Set.filter (\r -> r.object == object && r.relationName == relationName && isEndSubject r.subject)
+      & Set.foldr'
+        ( \r acc ->
+            case (r ^. #subject ^? _EndSubject) of
+              Just subject -> Set.insert subject acc
+              Nothing -> acc
+        )
+        Set.empty
+      & Set.filter (\s -> s.namespaceId == targetNamepace)
+      & Set.map Subject
   ComputedSubjectSet relName ->
     let filteredRelations = Set.filter (\r -> r.relationName == relName && r.object == object) relationTuples
      in Set.map (\r -> r.subject) filteredRelations

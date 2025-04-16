@@ -3,6 +3,8 @@ module ACL.Types.RewriteRule where
 import Data.Set (Set)
 import Data.Text (Text)
 
+import ACL.Types.NamespaceId
+
 data RewriteRules = Union (Set Child)
   deriving stock (Eq, Ord, Show)
 
@@ -12,8 +14,10 @@ data RewriteRules = Union (Set Child)
 --  * `Viewer: ComputedSubjectSet "editor"` to allow editors to view
 --  * `Viewer:  TupleSet "member" from "subscriber"` to allow members of subscribers to view
 data Child
-  = -- | _this
+  = -- | `_this` represents all subjects with the '<object>#<relation>' pair.
     This
+      NamespaceId
+      -- ^ Namespace for the subjects
   | -- | Relation to the same object
     ComputedSubjectSet
       Text
