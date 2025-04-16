@@ -1,42 +1,4 @@
-module ACL.Test.Fixtures
-  ( -- ** Organisations
-
-    -- *** Objects
-    scriveOrgObject
-  , sncfOrgObject
-  , trenitaliaOrgObject
-
-    -- *** Subjects
-  , scriveOrgSubject
-  , sncfOrgSubject
-  , trenitaliaOrgSubject
-
-    -- ** Accounts
-
-    -- *** Objects
-  , beatriceAccountSubject
-  , charlieAccountSubject
-  , lamiaAccountSubject
-  , namespaces
-  , organisationNamespace
-
-    -- ** Features
-  , seBankIDFeature
-  , smsFeature
-  , noBankIDFeature
-  , gatewayFeature
-
-    -- ** Plans
-
-    -- *** Objects
-  , enterprisePlanObject
-  , businessPlanObject
-  , essentialsPlanObject
-
-    -- *** Subjects
-  , enterprisePlanSubject
-  , businessPlanSubject
-  ) where
+module ACL.Test.Fixtures where
 
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
@@ -72,15 +34,6 @@ userNamespace =
     , relations = Map.empty
     }
 
-beatriceAccountSubject :: Subject
-beatriceAccountSubject = Subject $ EndSubject "user" "Beatrice"
-
-charlieAccountSubject :: Subject
-charlieAccountSubject = Subject $ EndSubject "user" "Charlie"
-
-lamiaAccountSubject :: Subject
-lamiaAccountSubject = Subject $ EndSubject "user" "Lamia"
-
 organisationNamespace :: Namespace
 organisationNamespace =
   let memberRule = Union (Set.fromList [This, ComputedSubjectSet "admin"])
@@ -94,18 +47,13 @@ organisationNamespace =
               ]
         }
 
-scriveOrgObject :: Object
-scriveOrgObject = Object "org" "scrive"
-
-sncfOrgObject :: Object
-sncfOrgObject = Object "org" "sncf"
-
 trenitaliaOrgObject :: Object
 trenitaliaOrgObject = Object "org" "trenitalia"
 
 scriveOrgSubject :: Subject
 scriveOrgSubject =
   let r = Relation "member" (Union $ Set.singleton This)
+      scriveOrgObject = Object "org" "scrive"
    in SubjectSet $ SubjectSetTuple scriveOrgObject (Just r)
 
 sncfOrgSubject :: Subject
@@ -126,21 +74,6 @@ planNamespace =
               , ("subscriber_member", r2)
               ]
         }
-
-essentialsPlanObject :: Object
-essentialsPlanObject = Object "plan" "essentials"
-
-businessPlanObject :: Object
-businessPlanObject = Object "plan" "business"
-
-enterprisePlanObject :: Object
-enterprisePlanObject = Object "plan" "enterprise"
-
-businessPlanSubject :: Subject
-businessPlanSubject = Subject $ EndSubject "plan" "business"
-
-enterprisePlanSubject :: Subject
-enterprisePlanSubject = Subject $ EndSubject "plan" "enterprise"
 
 featuresNamespace :: Namespace
 featuresNamespace =

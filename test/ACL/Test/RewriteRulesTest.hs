@@ -9,11 +9,13 @@ import Test.Tasty
 import Test.Tasty.HUnit
 
 import ACL.Check
-import ACL.Test.Fixtures
+import ACL.Test.Fixtures (gatewayFeature, namespaces, noBankIDFeature, organisationNamespace, seBankIDFeature, smsFeature)
 import ACL.Test.Utils
 import ACL.Types.Namespace
+import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
+import ACL.Types.Subject
 
 checkTests :: TestTree
 checkTests =
@@ -27,7 +29,11 @@ checkTests =
 
 testSimpleRewriteRule :: Assertion
 testSimpleRewriteRule = do
-  let relationTuples =
+  let sncfOrgObject = Object "org" "sncf"
+      beatriceAccountSubject = Subject $ EndSubject "user" "Beatrice"
+      charlieAccountSubject = Subject $ EndSubject "user" "Charlie"
+      trenitaliaOrgObject = Object "org" "trenitalia"
+      relationTuples =
         Set.fromList
           [ RelationTuple sncfOrgObject "admin" beatriceAccountSubject
           , RelationTuple trenitaliaOrgObject "member" charlieAccountSubject
@@ -39,7 +45,11 @@ testSimpleRewriteRule = do
 
 testComputedSubjectSet :: Assertion
 testComputedSubjectSet = do
-  let relationTuples =
+  let sncfOrgObject = Object "org" "sncf"
+      beatriceAccountSubject = Subject $ EndSubject "user" "Beatrice"
+      lamiaAccountSubject = Subject $ EndSubject "user" "Lamia"
+      scriveOrgObject = Object "org" "scrive"
+      relationTuples =
         Set.fromList
           [ RelationTuple scriveOrgObject "member" lamiaAccountSubject
           , RelationTuple sncfOrgObject "admin" beatriceAccountSubject
@@ -65,7 +75,15 @@ testComputedSubjectSet = do
 
 testTupleToSubjectset :: Assertion
 testTupleToSubjectset = do
-  let relationTuples =
+  let enterprisePlanObject = Object "plan" "enterprise"
+      businessPlanObject = Object "plan" "business"
+      enterprisePlanSubject = Subject $ EndSubject "plan" "enterprise"
+      sncfOrgObject = Object "org" "sncf"
+      sncfOrgSubject = Subject $ EndSubject "org" "sncf"
+      trenitaliaOrgSubject = Subject $ EndSubject "org" "trenitalia"
+      scriveOrgSubject = Subject $ EndSubject "org" "scrive"
+      charlieAccountSubject = Subject $ EndSubject "user" "Charlie"
+      relationTuples =
         Set.fromList
           [ RelationTuple seBankIDFeature "associated_plan" enterprisePlanSubject
           , RelationTuple enterprisePlanObject "subscriber" sncfOrgSubject
@@ -81,7 +99,21 @@ testTupleToSubjectset = do
 
 testTransitiveAccessBySubscriberMembers :: Assertion
 testTransitiveAccessBySubscriberMembers = do
-  let relationTuples =
+  let enterprisePlanObject = Object "plan" "enterprise"
+      businessPlanObject = Object "plan" "business"
+      essentialsPlanObject = Object "plan" "essentials"
+      enterprisePlanSubject = Subject $ EndSubject "plan" "enterprise"
+      businessPlanSubject = Subject $ EndSubject "plan" "business"
+      sncfOrgObject = Object "org" "sncf"
+      scriveOrgObject = Object "org" "scrive"
+      trenitaliaOrgObject = Object "org" "trenitalia"
+      sncfOrgSubject = Subject $ EndSubject "org" "sncf"
+      trenitaliaOrgSubject = Subject $ EndSubject "org" "trenitalia"
+      scriveOrgSubject = Subject $ EndSubject "org" "scrive"
+      charlieAccountSubject = Subject $ EndSubject "user" "Charlie"
+      lamiaAccountSubject = Subject $ EndSubject "user" "Lamia"
+      beatriceAccountSubject = Subject $ EndSubject "user" "Beatrice"
+      relationTuples =
         Set.fromList
           [ -- features belonging to plans
             RelationTuple smsFeature "associated_plan" businessPlanSubject

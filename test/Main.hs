@@ -6,7 +6,9 @@ import Test.Tasty.HUnit
 
 import ACL.Test.Fixtures
 import ACL.Test.RewriteRulesTest
+import ACL.Types.Object (Object (..))
 import ACL.Types.RelationTuple
+import ACL.Types.Subject
 
 main :: IO ()
 main =
@@ -28,6 +30,8 @@ displayTests =
 
 displayObjectRelationSubjectIdRelation :: Assertion
 displayObjectRelationSubjectIdRelation = do
+  let scriveOrgObject = Object "org" "scrive"
+      beatriceAccountSubject = Subject $ EndSubject "user" "Beatrice"
   let r =
         RelationTuple
           { object = scriveOrgObject
@@ -41,6 +45,7 @@ displayObjectRelationSubjectIdRelation = do
 
 displayObjectRelationSubjectSetRelation :: Assertion
 displayObjectRelationSubjectSetRelation = do
+  let sncfOrgObject = Object "org" "sncf"
   let r =
         RelationTuple
           { object = sncfOrgObject
