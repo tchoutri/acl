@@ -2,16 +2,17 @@ module ACL.Types.Subject where
 
 import Data.Text (Text)
 import Data.Text.Display
+import GHC.Generics
+import Optics.Prism
 
-import ACL.Types.Namespace
+import ACL.Types.NamespaceId (NamespaceId)
 import ACL.Types.Object
-import ACL.Types.Relation (Relation)
 
 data EndSubject = EndSubject
   { namespaceId :: NamespaceId
   , useId :: Text
   }
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Generic, Ord, Show)
 
 instance Display EndSubject where
   displayBuilder (EndSubject namespace identifier) = displayBuilder namespace <> ":" <> displayBuilder identifier
@@ -25,13 +26,22 @@ isEndSubject :: Subject -> Bool
 isEndSubject (Subject _) = True
 isEndSubject _ = False
 
+_EndSubject :: Prism' Subject EndSubject
+_EndSubject =
+  prism'
+    Subject
+    ( \case
+        Subject endSubject -> Just endSubject
+        SubjectSet _ -> Nothing
+    )
+
 instance Display Subject where
   displayBuilder (Subject i) = displayBuilder i
   displayBuilder (SubjectSet subjectSet) = displayBuilder subjectSet
 
 data SubjectSetTuple = SubjectSetTuple
   { object :: Object
-  , mRelation :: Maybe Relation
+  , mRelationName :: Maybe Text
   }
   deriving stock (Eq, Ord, Show)
 

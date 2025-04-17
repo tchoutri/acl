@@ -2,6 +2,7 @@ module ACL.Types.RelationTuple where
 
 import Data.Text (Text)
 import Data.Text.Display
+import GHC.Generics
 
 import ACL.Types.Object
 import ACL.Types.Subject
@@ -11,7 +12,7 @@ data RelationTuple = RelationTuple
   , relationName :: Text
   , subject :: Subject
   }
-  deriving stock (Eq, Ord, Show)
+  deriving stock (Eq, Generic, Ord, Show)
 
 instance Display RelationTuple where
   displayBuilder (RelationTuple o r s) =
