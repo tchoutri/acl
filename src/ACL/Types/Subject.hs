@@ -7,7 +7,6 @@ import Optics.Prism
 
 import ACL.Types.NamespaceId (NamespaceId)
 import ACL.Types.Object
-import ACL.Types.Relation (Relation)
 
 data EndSubject = EndSubject
   { namespaceId :: NamespaceId
@@ -42,7 +41,7 @@ instance Display Subject where
 
 data SubjectSetTuple = SubjectSetTuple
   { object :: Object
-  , mRelation :: Maybe Relation
+  , mRelationName :: Maybe Text
   }
   deriving stock (Eq, Ord, Show)
 
