@@ -12,6 +12,7 @@ import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
 import ACL.Types.Subject
+import Effectful
 
 spec :: TestTree
 spec =
@@ -96,8 +97,8 @@ testParentOwnerFolderCanWriteDocument = do
   assertEqual
     "Unexpected results"
     (Set.singleton (annAccountSubject))
-    (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") (This "user"))
+    (runPureEff $ expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") (This "user"))
 
   assertBool
-    (Text.unpack $ "doc:2021-roadmap#can_write@user:anne")
-    (check namespaces relationTuples (doc2021RoadmapObject, "can_access") annAccountSubject)
+    (Text.unpack $ "Could not validate doc:2021-roadmap#can_write@user:anne")
+    (check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject)

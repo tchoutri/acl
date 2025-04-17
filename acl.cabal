@@ -65,6 +65,7 @@ library
     text-display,
     vector,
     optics-core,
+    effectful-core,
 
   hs-source-dirs: src
   default-language: GHC2024
@@ -94,3 +95,4 @@ test-suite acl-test
     text,
     text-display,
     vector,
+    effectful-core,

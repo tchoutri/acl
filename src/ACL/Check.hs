@@ -5,6 +5,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Effectful
 import Optics.Core
 
 import ACL.Types.Namespace
@@ -17,27 +18,29 @@ import ACL.Types.Subject
 check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> Bool
 check namespaces relations (obj, rel) user =
   (RelationTuple obj rel user) `Set.member` relations
-    || check' namespaces relations (obj, rel) user
+    || (runPureEff $ check' namespaces relations (obj, rel) user)
 
-check' :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> Bool
+check' :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> Eff es Bool
 check' namespaces relations (obj, rel) user =
   case Map.lookup obj.namespaceId namespaces of
-    Nothing -> False
+    Nothing -> pure False
     Just namespace ->
       let mRules = Map.lookup rel namespace.relations
        in case mRules of
-            Nothing -> False
-            Just (rules :: RewriteRules) ->
-              let haystack = expandRewriteRules namespaces relations (obj, rel) rules
-               in user `Set.member` haystack
+            Nothing -> pure False
+            Just (rules :: RewriteRules) -> do
+              haystack <- expandRewriteRules namespaces relations (obj, rel) rules
+              pure $ user `Set.member` haystack
 
-expandRewriteRules :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> RewriteRules -> Set Subject
-expandRewriteRules namespaces relations needle (Union children) =
-  children
-    & Set.map (expandRewriteRuleChild namespaces relations needle)
-    & Set.unions
+expandRewriteRules :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> RewriteRules -> Eff es (Set Subject)
+expandRewriteRules namespaces relations needle (Union children) = do
+  expanded <- traverse (expandRewriteRuleChild namespaces relations needle) (Set.toList children)
+  pure $
+    expanded
+      & Set.fromList
+      & Set.unions
 
-expandRewriteRuleChild :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Child -> Set Subject
+expandRewriteRuleChild :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Child -> Eff es (Set Subject)
 expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
   This targetNamepace ->
     relationTuples
@@ -51,15 +54,16 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
         Set.empty
       & Set.filter (\s -> s.namespaceId == targetNamepace)
       & Set.map Subject
-  ComputedSubjectSet relName ->
+      & pure
+  ComputedSubjectSet relName -> do
     let filteredRelations = Set.filter (\r -> r.relationName == relName && r.object == object) relationTuples
-     in Set.map (\r -> r.subject) filteredRelations
-  TupleSetChild computedRelation tuplesetRelation ->
+    pure $ Set.map (\r -> r.subject) filteredRelations
+  TupleSetChild computedRelation tuplesetRelation -> do
     -- 1. Fetch all users with the (object, tuplesetRelation) key in relationTuples
-    let (subjectSet :: Set Subject) =
-          expandRewriteRuleChild namespaces relationTuples (object, "") (ComputedSubjectSet tuplesetRelation)
-        -- 2. Use these users as new ojects and fetch all users that have a record for <newObjects#computedRelation> in there
-        objectSet = Set.map userToObject subjectSet
+    (subjectSet :: Set Subject) <-
+      expandRewriteRuleChild namespaces relationTuples (object, "") (ComputedSubjectSet tuplesetRelation)
+    -- 2. Use these users as new ojects and fetch all users that have a record for <newObjects#computedRelation> in there
+    let objectSet = Set.map userToObject subjectSet
         newObjectsNamespaceId = (Set.elemAt 0 objectSet).namespaceId
         mRewriteRules =
           case Map.lookup newObjectsNamespaceId namespaces of
@@ -68,8 +72,10 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
               Nothing -> Nothing
               Just newRewriteRules -> Just newRewriteRules
      in case mRewriteRules of
-          Nothing -> Set.empty
-          Just rewriteRules ->
-            objectSet
-              & Set.map (\o -> expandRewriteRules namespaces relationTuples (o, computedRelation) rewriteRules)
+          Nothing -> pure Set.empty
+          Just rewriteRules -> do
+            expanded <- traverse (\o -> expandRewriteRules namespaces relationTuples (o, computedRelation) rewriteRules) (Set.toList objectSet)
+            expanded
+              & Set.fromList
               & Set.unions
+              & pure
