@@ -1,18 +1,20 @@
 module ACL.Test.RewriteRulesTest.FolderDocumentsTest where
 
+import Control.Monad
 import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Data.Text qualified as Text
 import Test.Tasty
 import Test.Tasty.HUnit
 
+import ACL.ACLEff
 import ACL.Check
+import ACL.Test.Utils
 import ACL.Types.Namespace
 import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
 import ACL.Types.Subject
-import Effectful
 
 spec :: TestTree
 spec =
@@ -39,8 +41,8 @@ testParentOwnerFolderCanWriteDocument = do
                 Set.fromList
                   [ This "user"
                   , TupleSetChild
-                      "parent"
                       "viewer"
+                      "parent"
                   ]
             )
           ]
@@ -55,7 +57,7 @@ testParentOwnerFolderCanWriteDocument = do
             , Union $
                 Set.fromList
                   [ ComputedSubjectSet "owner"
-                  , TupleSetChild "parent" "owner"
+                  , TupleSetChild "owner" "parent"
                   ]
             )
           ]
@@ -94,11 +96,13 @@ testParentOwnerFolderCanWriteDocument = do
           , RelationTuple contosoGroupObject "member" bethAccountSubject
           , RelationTuple fabrikamObject "member" charlesAccountSubject
           ]
+  aclResult <- assertRight "" (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") (This "user")))
   assertEqual
     "Unexpected results"
     (Set.singleton (annAccountSubject))
-    (runPureEff $ expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") (This "user"))
+    aclResult
 
-  assertBool
-    (Text.unpack $ "Could not validate doc:2021-roadmap#can_write@user:anne")
-    (check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject)
+  void $
+    assertRight
+      (Text.unpack $ "Could not validate doc:2021-roadmap#can_write@user:anne")
+      (check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject)

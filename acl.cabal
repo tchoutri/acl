@@ -50,6 +50,8 @@ library
   import: ghc-options
   exposed-modules:
     ACL.Check
+    ACL.ACLEff
+    ACL.Types.CheckError
     ACL.Types.Namespace
     ACL.Types.NamespaceId
     ACL.Types.Object
