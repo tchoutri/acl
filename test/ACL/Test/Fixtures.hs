@@ -7,7 +7,6 @@ import Data.Set qualified as Set
 import ACL.Types.Namespace
 import ACL.Types.NamespaceId
 import ACL.Types.Object
-import ACL.Types.Relation
 import ACL.Types.RewriteRule
 import ACL.Types.Subject
 
@@ -53,9 +52,8 @@ trenitaliaOrgObject = Object "org" "trenitalia"
 
 scriveOrgSubject :: Subject
 scriveOrgSubject =
-  let r = Relation "member" (Union $ Set.singleton (This "user"))
-      scriveOrgObject = Object "org" "scrive"
-   in SubjectSet $ SubjectSetTuple scriveOrgObject (Just r)
+  let scriveOrgObject = Object "org" "scrive"
+   in SubjectSet $ SubjectSetTuple scriveOrgObject (Just "member")
 
 sncfOrgSubject :: Subject
 sncfOrgSubject = Subject $ EndSubject "org" "sncf"
