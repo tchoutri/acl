@@ -14,6 +14,7 @@ lint: ## Run hlint
 	@find -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
 style: ## Run formatter
+	@cabal-gild --io acl.cabal
 	@fourmolu src test -q --mode inplace
 
 tags: ## Run ghc-tags

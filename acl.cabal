@@ -8,7 +8,7 @@ maintainer: theophile@choutri.eu
 category: ACL
 build-type: Simple
 extra-doc-files: CHANGELOG.md
-tested-with: GHC ==9.10.1
+tested-with: ghc ==9.10.1
 
 -- extra-source-files:
 common extensions
@@ -18,11 +18,11 @@ common extensions
     DerivingVia
     DuplicateRecordFields
     LambdaCase
-    NoStarIsType
     MagicHash
+    NoStarIsType
+    OverloadedLabels
     OverloadedRecordDot
     OverloadedStrings
-    OverloadedLabels
     PackageImports
     RecordWildCards
     StrictData
@@ -48,9 +48,10 @@ common ghc-options
 library
   import: extensions
   import: ghc-options
+  -- cabal-gild: discover src
   exposed-modules:
-    ACL.Check
     ACL.ACLEff
+    ACL.Check
     ACL.Types.CheckError
     ACL.Types.Namespace
     ACL.Types.NamespaceId
@@ -63,11 +64,11 @@ library
   build-depends:
     base ^>=4.20.0.0,
     containers,
+    effectful-core,
+    optics-core,
     text,
     text-display,
     vector,
-    optics-core,
-    effectful-core,
 
   hs-source-dirs: src
   default-language: GHC2024
@@ -75,26 +76,32 @@ library
 test-suite acl-test
   import: extensions
   import: ghc-options
-  ghc-options: -rtsopts -threaded "-with-rtsopts=-N -T"
+  ghc-options:
+    -rtsopts
+    -threaded
+    "-with-rtsopts=-N -T"
+
   default-language: GHC2024
   type: exitcode-stdio-1.0
   hs-source-dirs: test
   main-is: Main.hs
+  -- cabal-gild: discover test --exclude=test/Main.hs
   other-modules:
-    ACL.Test.Fixtures
-    ACL.Test.Utils
-    ACL.Test.RewriteRulesTest
-    ACL.Test.RewriteRulesTest.OrgsPlansTest
-    ACL.Test.RewriteRulesTest.FolderDocumentsTest
     ACL.Test.DisplayTest
+    ACL.Test.Fixtures
+    ACL.Test.RewriteRulesTest
+    ACL.Test.RewriteRulesTest.FolderDocumentsTest
+    ACL.Test.RewriteRulesTest.OrgsPlansTest
+    ACL.Test.RewriteRulesTest.TeamTest
+    ACL.Test.Utils
 
   build-depends:
     acl,
     base ^>=4.20.0.0,
     containers,
+    effectful-core,
     tasty,
     tasty-hunit,
     text,
     text-display,
     vector,
-    effectful-core,
