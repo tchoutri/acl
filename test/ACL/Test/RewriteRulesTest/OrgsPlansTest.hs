@@ -121,7 +121,7 @@ testTupleToSubjectset = do
           , RelationTuple sncfOrgObject "admin" charlieAccountSubject
           ]
 
-  aclResult <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") (TupleSetChild "member" "subscriber"))
+  aclResult <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") ("member" `from` "subscriber"))
 
   assertEqual
     "Tupleset Child rule is not correctly expanded"

@@ -90,9 +90,9 @@ test-suite acl-test
     ACL.Test.DisplayTest
     ACL.Test.Fixtures
     ACL.Test.RewriteRulesTest
+    ACL.Test.RewriteRulesTest.BlocklistTest
     ACL.Test.RewriteRulesTest.FolderDocumentsTest
     ACL.Test.RewriteRulesTest.OrgsPlansTest
-    ACL.Test.RewriteRulesTest.TeamTest
     ACL.Test.Utils
 
   build-depends:

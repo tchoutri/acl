@@ -40,9 +40,9 @@ testParentOwnerFolderCanWriteDocument = do
             , Union $
                 Set.fromList
                   [ This "user"
-                  , TupleSetChild
-                      "viewer"
-                      "parent"
+                  , "viewer"
+                    `from`
+                    "parent"
                   ]
             )
           ]
@@ -57,7 +57,7 @@ testParentOwnerFolderCanWriteDocument = do
             , Union $
                 Set.fromList
                   [ ComputedSubjectSet "owner"
-                  , TupleSetChild "owner" "parent"
+                  , "owner" `from` "parent"
                   ]
             )
           ]

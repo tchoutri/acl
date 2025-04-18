@@ -75,7 +75,7 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
     -- 2. Use these users as new ojects and fetch all users that have a record for <newObjects#computedRelation> in there
     let objectSet = Set.map userToObject subjectSet
     if Set.null objectSet
-      then throwError (EmptyTupleSetRelation tuplesetRelation)
+      then pure $ Set.empty
       else do
         let newObjectsNamespaceId = (Set.elemAt 0 objectSet).namespaceId
             mRewriteRules =

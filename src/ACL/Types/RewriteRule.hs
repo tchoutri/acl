@@ -27,3 +27,7 @@ data Child
       Text
       -- ^ Tupleset Relation
   deriving stock (Eq, Ord, Show)
+
+-- | Use it like this: "member" `from` "team"
+from :: Text -> Text -> Child
+from computedRelation tuplesetRelation = TupleSetChild computedRelation tuplesetRelation
