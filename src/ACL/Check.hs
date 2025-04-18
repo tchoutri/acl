@@ -2,11 +2,14 @@ module ACL.Check where
 
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
+import Data.Sequence (Seq)
+import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Effectful
 import Effectful.Error.Static (Error, throwError)
+import Effectful.State.Static.Local (State)
 import Optics.Core
 
 import ACL.ACLEff
@@ -18,13 +21,13 @@ import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
 import ACL.Types.Subject
 
-check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> Either CheckError Bool
+check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> Either CheckError (Bool, Seq Text)
 check namespaces relations (obj, rel) user =
   if (RelationTuple obj rel user) `Set.member` relations
-    then Right True
+    then Right (True, Seq.singleton "_this")
     else runACL $ check' namespaces relations (obj, rel) user
 
-check' :: Error CheckError :> es => Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> Eff es Bool
+check' :: (Error CheckError :> es, State (Seq Text) :> es) => Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> Eff es Bool
 check' namespaces relations (obj, rel) user =
   case Map.lookup obj.namespaceId namespaces of
     Nothing -> pure False
@@ -36,7 +39,7 @@ check' namespaces relations (obj, rel) user =
               haystack <- expandRewriteRules namespaces relations (obj, rel) rules
               pure $ user `Set.member` haystack
 
-expandRewriteRules :: Error CheckError :> es => Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> RewriteRules -> Eff es (Set Subject)
+expandRewriteRules :: (Error CheckError :> es, State (Seq Text) :> es) => Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> RewriteRules -> Eff es (Set Subject)
 expandRewriteRules namespaces relations needle (Union children) = do
   expanded <- traverse (expandRewriteRuleChild namespaces relations needle) (Set.toList children)
   pure $
@@ -45,7 +48,7 @@ expandRewriteRules namespaces relations needle (Union children) = do
       & Set.unions
 
 expandRewriteRuleChild
-  :: Error CheckError :> es
+  :: (Error CheckError :> es, State (Seq Text) :> es)
   => Map NamespaceId Namespace
   -> Set RelationTuple
   -> (Object, Text)

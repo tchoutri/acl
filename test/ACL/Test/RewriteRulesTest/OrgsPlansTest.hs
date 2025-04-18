@@ -2,6 +2,7 @@ module ACL.Test.RewriteRulesTest.OrgsPlansTest where
 
 import Control.Monad
 import Data.Map.Strict qualified as Map
+import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -42,7 +43,7 @@ testExpectedSubjectsForThis = do
           , RelationTuple sncfOrgObject "member" charlieAccountSubject
           , RelationTuple sncfOrgObject "member" kevinTaxInspectorSubject
           ]
-  aclResult <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (This "user"))
+  (aclResult, _) <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (This "user"))
   assertEqual
     "Unexpected result for _this subjects"
     ( Set.fromList
@@ -81,7 +82,7 @@ testComputedSubjectSet = do
           , RelationTuple sncfOrgObject "admin" beatriceAccountSubject
           ]
 
-  aclResult1 <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (ComputedSubjectSet "admin"))
+  (aclResult1, _) <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (ComputedSubjectSet "admin"))
   assertEqual
     "Could not find user Beatrice when evaluating computed user set child rule"
     (Set.singleton beatriceAccountSubject)
@@ -91,15 +92,16 @@ testComputedSubjectSet = do
     assertJust $
       Map.lookup ("member" :: Text) organisationNamespace.relations
 
-  aclResult2 <- assertRight "" (runACL $ expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules)
+  (aclResult2, _) <- assertRight "" (runACL $ expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules)
   assertEqual
     "Could not find user Beatrice for computed user set"
     (Set.singleton beatriceAccountSubject)
     aclResult2
 
   void $
-    assertRight
+    assertEqual
       "Beatrice can be seen as a member of SNCF due to being Admin"
+      (Right (True, Seq.empty))
       (check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountSubject)
 
 testTupleToSubjectset :: Assertion
@@ -121,7 +123,7 @@ testTupleToSubjectset = do
           , RelationTuple sncfOrgObject "admin" charlieAccountSubject
           ]
 
-  aclResult <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") ("member" `from` "subscriber"))
+  (aclResult, _) <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") ("member" `from` "subscriber"))
 
   assertEqual
     "Tupleset Child rule is not correctly expanded"

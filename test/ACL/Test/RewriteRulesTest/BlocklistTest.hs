@@ -1,7 +1,7 @@
 module ACL.Test.RewriteRulesTest.BlocklistTest where
 
-import Control.Monad
 import Data.Map.Strict qualified as Map
+import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -26,7 +26,7 @@ testThatBlocklistWorks :: Assertion
 testThatBlocklistWorks = do
   let userNamespace = Namespace "user" Map.empty
   let documentNamespace =
-        let editorRelation = Union (Set.fromList [This "user", "member" `from` "team"])
+        let editorRelation = Union (Set.fromList [This "user", "member" `from` "team"])
          in Namespace
               { namespaceId = "document"
               , relations = Map.fromList [("editor", editorRelation)]
@@ -54,7 +54,7 @@ testThatBlocklistWorks = do
           , RelationTuple teamProduct "member" userCarl
           ]
 
-  productTeamMembers <-
+  (productTeamMembers, _) <-
     assertRight "" $
       runACL $
         expandRewriteRules namespaces relationTuples (teamProduct, "member") memberRelation
@@ -65,5 +65,5 @@ testThatBlocklistWorks = do
 
   assertEqual
     "is user:becky related to document:planning as editor?"
-    (Right True)
+    (Right (True, Seq.empty))
     (check namespaces relationTuples (documentPlanning, "editor") userBecky)

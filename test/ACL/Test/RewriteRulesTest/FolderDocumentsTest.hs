@@ -41,8 +41,7 @@ testParentOwnerFolderCanWriteDocument = do
                 Set.fromList
                   [ This "user"
                   , "viewer"
-                    `from`
-                    "parent"
+                      `from` "parent"
                   ]
             )
           ]
@@ -96,7 +95,7 @@ testParentOwnerFolderCanWriteDocument = do
           , RelationTuple contosoGroupObject "member" bethAccountSubject
           , RelationTuple fabrikamObject "member" charlesAccountSubject
           ]
-  aclResult <- assertRight "" (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") (This "user")))
+  (aclResult, _) <- assertRight "" (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") (This "user")))
   assertEqual
     "Unexpected results"
     (Set.singleton (annAccountSubject))
