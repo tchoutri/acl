@@ -63,6 +63,7 @@ library
     ACL.Types.Trace
 
   build-depends:
+    atomic-counter,
     base ^>=4.20.0.0,
     containers,
     effectful-core,

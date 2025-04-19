@@ -42,7 +42,8 @@ testExpectedSubjectsForThis = do
           , RelationTuple sncfOrgObject "member" charlieAccountSubject
           , RelationTuple sncfOrgObject "member" kevinTaxInspectorSubject
           ]
-  (aclResult, _) <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") (This "user"))
+  (aclResult1, _) <- assertRight "" =<< (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") (This "user"))
+
   assertEqual
     "Unexpected result for _this subjects"
     ( Set.fromList
@@ -50,7 +51,7 @@ testExpectedSubjectsForThis = do
         , charlieAccountSubject
         ]
     )
-    aclResult
+    aclResult1
 
 testSimpleRewriteRule :: Assertion
 testSimpleRewriteRule = do
@@ -64,10 +65,19 @@ testSimpleRewriteRule = do
           , RelationTuple trenitaliaOrgObject "member" charlieAccountSubject
           ]
 
+  aclResult1 <- check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountSubject
   void $
-    assertRight
+    assertEqual
       "Beatrice is not member of SNCF"
-      (check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountSubject)
+      ( Right
+          ( True
+          , Map.fromList
+              [ ("admin", Seq.fromList ["0 | _this user"])
+              , ("member", Seq.fromList ["1 | _this user", "2 | ComputedSubjectSet on #admin"])
+              ]
+          )
+      )
+      aclResult1
 
 testComputedSubjectSet :: Assertion
 testComputedSubjectSet = do
@@ -81,7 +91,7 @@ testComputedSubjectSet = do
           , RelationTuple sncfOrgObject "admin" beatriceAccountSubject
           ]
 
-  (aclResult1, _) <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") (ComputedSubjectSet "admin"))
+  (aclResult1, _) <- assertRight "" =<< (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") (ComputedSubjectSet "admin"))
   assertEqual
     "Could not find user Beatrice when evaluating computed user set child rule"
     (Set.singleton beatriceAccountSubject)
@@ -91,17 +101,18 @@ testComputedSubjectSet = do
     assertJust $
       Map.lookup (RuleName "member") organisationNamespace.relations
 
-  (aclResult2, _) <- assertRight "" (runACL $ expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules (RuleName "member"))
+  (aclResult2, _) <- assertRight "" =<< (runACL $ expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules (RuleName "member"))
   assertEqual
     "Could not find user Beatrice for computed user set"
     (Set.singleton beatriceAccountSubject)
     aclResult2
 
+  aclResult3 <- assertRight "" =<< check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountSubject
   void $
     assertEqual
       "Beatrice can be seen as a member of SNCF due to being Admin"
-      (Right (True, Map.fromList [("admin", Seq.fromList ["_this user"]), ("member", Seq.fromList ["_this user", "ComputedSubjectSet admin"])]))
-      (check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountSubject)
+      (True, Map.fromList [("admin", Seq.fromList ["0 | _this user"]), ("member", Seq.fromList ["1 | _this user", "2 | ComputedSubjectSet on #admin"])])
+      aclResult3
 
 testTupleToSubjectset :: Assertion
 testTupleToSubjectset = do
@@ -122,7 +133,7 @@ testTupleToSubjectset = do
           , RelationTuple sncfOrgObject "admin" charlieAccountSubject
           ]
 
-  (aclResult, _) <- assertRight "" (runACL $ expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") "subscriber_member" ("member" `from` "subscriber"))
+  (aclResult, _) <- assertRight "" =<< (runACL $ expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") "subscriber_member" ("member" `from` "subscriber"))
 
   assertEqual
     "Tupleset Child rule is not correctly expanded"
@@ -164,18 +175,29 @@ testTransitiveAccessBySubscriberMembers = do
           , RelationTuple enterprisePlanObject "subscriber" sncfOrgSubject
           ]
 
+  aclResult1 <- assertRight "" =<< check namespaces relationTuples (seBankIDFeature, "associated_plan") enterprisePlanSubject
   let step1Relation = RelationTuple seBankIDFeature "associated_plan" enterprisePlanSubject
-  assertRight
+  assertEqual
     (Text.unpack $ "Enterprise plan contains SEBankID (" <> display step1Relation <> ")")
-    (check namespaces relationTuples (seBankIDFeature, "associated_plan") enterprisePlanSubject)
+    (True, Map.fromList [("direct", Seq.fromList ["_this"])])
+    aclResult1
 
+  aclResult2 <- assertRight "" =<< check namespaces relationTuples (enterprisePlanObject, "subscriber") sncfOrgSubject
   let step2Relation = RelationTuple enterprisePlanObject "subscriber" sncfOrgSubject
-  assertRight
+  assertEqual
     (Text.unpack $ "SNCF is subscribed to plan Enterprise (" <> display step2Relation <> ")")
-    (check namespaces relationTuples (enterprisePlanObject, "subscriber") sncfOrgSubject)
+    (True, Map.fromList [("direct", Seq.fromList ["_this"])])
+    aclResult2
 
+  aclResult3 <- assertRight "" =<< check namespaces relationTuples (seBankIDFeature, "can_access") charlieAccountSubject
   let step3Relation = RelationTuple seBankIDFeature "subscriber" charlieAccountSubject
   void $
-    assertRight
+    assertEqual
       (Text.unpack $ "Charlie can access SE Bank ID through SNCF's subscription to Enterprise plan" <> display step3Relation <> ")")
-      (check namespaces relationTuples (seBankIDFeature, "can_access") charlieAccountSubject)
+      ( True
+      , Map.fromList
+          [ ("associated_plan", Seq.fromList ["0 | _this plan"])
+          , ("can_access", Seq.fromList ["1 | subscriber_member from associated_plan", "2 | ComputedSubjectSet on #subscriber_member", "3 | member from subscriber", "4 | ComputedSubjectSet on #member", "5 | _this user", "6 | ComputedSubjectSet on #admin"])
+          ]
+      )
+      aclResult3

@@ -3,6 +3,9 @@ module ACL.Test.RewriteRulesTest.BlocklistTest where
 import Data.Map.Strict qualified as Map
 import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
+import Data.Text qualified as Text
+import Data.Text.Display
+import Debug.Trace
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -54,16 +57,16 @@ testThatBlocklistWorks = do
           , RelationTuple teamProduct "member" userCarl
           ]
 
-  (productTeamMembers, _) <-
-    assertRight "" $
-      runACL $
-        expandRewriteRules namespaces relationTuples (teamProduct, "member") memberRelation "member"
-
-  assertBool
-    "Becky is not part of the members of team:product!"
-    (Set.member userBecky productTeamMembers)
+  aclResult0 <- assertRight "" =<< (runACL $ expandRewriteRules namespaces relationTuples (teamProduct, "member") memberRelation "member")
 
   assertEqual
+    "Becky is not part of the members of team:product!"
+    (Set.fromList [Subject (EndSubject "user" "becky"), Subject (EndSubject "user" "carl")], Map.fromList [("member", Seq.fromList ["0 | _this user"])])
+    aclResult0
+
+  traceM $ Text.unpack $ "relation tuples: " <> (display $ Set.toList relationTuples)
+  aclResult1 <- assertRight "" =<< check namespaces relationTuples (documentPlanning, "editor") userBecky
+  assertEqual
     "is user:becky related to document:planning as editor?"
-    (Right (True, Map.fromList [("editor", Seq.fromList ["_this user", "member from team", "ComputedSubjectSet team"])]))
-    (check namespaces relationTuples (documentPlanning, "editor") userBecky)
+    (True, Map.fromList [("editor", Seq.fromList ["0 | _this user", "1 | member from team", "2 | ComputedSubjectSet on #member", "3 | _this user"])])
+    aclResult1

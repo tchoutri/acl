@@ -95,13 +95,22 @@ testParentOwnerFolderCanWriteDocument = do
           , RelationTuple fabrikamObject "member" charlesAccountSubject
           ]
 
-  (aclResult, _) <- assertRight "" (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") "owner" (This "user")))
+  (aclResult, _) <- assertRight "" =<< (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") "owner" (This "user")))
   assertEqual
     "Unexpected results"
     (Set.singleton (annAccountSubject))
     aclResult
 
+  aclResult2 <- check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject
   assertEqual
     "Could not validate doc:2021-roadmap#can_write@user:anne"
-    (Right (True, Map.fromList [("can_write", Seq.fromList ["ComputedSubjectSet owner", "owner from parent", "ComputedSubjectSet parent", "_this user"]), ("owner", Seq.fromList ["_this user"]), ("parent", Seq.fromList ["_this folder"])]))
-    (check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject)
+    ( Right
+        ( True
+        , Map.fromList
+            [ ("can_write", Seq.fromList ["0 | ComputedSubjectSet on #owner", "1 | owner from parent", "2 | ComputedSubjectSet on #owner", "3 | _this user", "4 | _this user"])
+            , ("owner", Seq.fromList ["5 | _this user"])
+            , ("parent", Seq.fromList ["6 | _this folder"])
+            ]
+        )
+    )
+    aclResult2
