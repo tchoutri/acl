@@ -62,6 +62,10 @@ expandRewriteRules namespaces relations needle (Union children) ruleName = do
     expanded
       & Set.fromList
       & Set.unions
+expandRewriteRules namespaces relations needle (Difference children1 children2) ruleName = do
+  set1 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children1)
+  set2 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children2)
+  pure $ Set.difference (mconcat set1) (mconcat set2)
 
 expandRewriteRuleChild
   :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)
