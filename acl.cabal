@@ -60,6 +60,7 @@ library
     ACL.Types.RelationTuple
     ACL.Types.RewriteRule
     ACL.Types.Subject
+    ACL.Types.Trace
 
   build-depends:
     base ^>=4.20.0.0,

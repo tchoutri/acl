@@ -1,9 +1,8 @@
 module ACL.Test.RewriteRulesTest.FolderDocumentsTest where
 
-import Control.Monad
 import Data.Map.Strict qualified as Map
+import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
-import Data.Text qualified as Text
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -95,13 +94,14 @@ testParentOwnerFolderCanWriteDocument = do
           , RelationTuple contosoGroupObject "member" bethAccountSubject
           , RelationTuple fabrikamObject "member" charlesAccountSubject
           ]
-  (aclResult, _) <- assertRight "" (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") (This "user")))
+
+  (aclResult, _) <- assertRight "" (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") "owner" (This "user")))
   assertEqual
     "Unexpected results"
     (Set.singleton (annAccountSubject))
     aclResult
 
-  void $
-    assertRight
-      (Text.unpack $ "Could not validate doc:2021-roadmap#can_write@user:anne")
-      (check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject)
+  assertEqual
+    "Could not validate doc:2021-roadmap#can_write@user:anne"
+    (Right (True, Map.fromList [("can_write", Seq.fromList ["ComputedSubjectSet owner", "owner from parent", "ComputedSubjectSet parent", "_this user"]), ("owner", Seq.fromList ["_this user"]), ("parent", Seq.fromList ["_this folder"])]))
+    (check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject)

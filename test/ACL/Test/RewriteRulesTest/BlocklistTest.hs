@@ -57,13 +57,13 @@ testThatBlocklistWorks = do
   (productTeamMembers, _) <-
     assertRight "" $
       runACL $
-        expandRewriteRules namespaces relationTuples (teamProduct, "member") memberRelation
+        expandRewriteRules namespaces relationTuples (teamProduct, "member") memberRelation "member"
 
   assertBool
-    "Becky is not part of the members of team:product"
+    "Becky is not part of the members of team:product!"
     (Set.member userBecky productTeamMembers)
 
   assertEqual
     "is user:becky related to document:planning as editor?"
-    (Right (True, Seq.empty))
+    (Right (True, Map.fromList [("editor", Seq.fromList ["_this user", "member from team", "ComputedSubjectSet team"])]))
     (check namespaces relationTuples (documentPlanning, "editor") userBecky)
