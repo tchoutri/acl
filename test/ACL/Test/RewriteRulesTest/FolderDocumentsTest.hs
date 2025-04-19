@@ -1,9 +1,8 @@
 module ACL.Test.RewriteRulesTest.FolderDocumentsTest where
 
-import Control.Monad
 import Data.Map.Strict qualified as Map
+import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
-import Data.Text qualified as Text
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -40,9 +39,8 @@ testParentOwnerFolderCanWriteDocument = do
             , Union $
                 Set.fromList
                   [ This "user"
-                  , TupleSetChild
-                      "viewer"
-                      "parent"
+                  , "viewer"
+                      `from` "parent"
                   ]
             )
           ]
@@ -57,7 +55,7 @@ testParentOwnerFolderCanWriteDocument = do
             , Union $
                 Set.fromList
                   [ ComputedSubjectSet "owner"
-                  , TupleSetChild "owner" "parent"
+                  , "owner" `from` "parent"
                   ]
             )
           ]
@@ -96,13 +94,23 @@ testParentOwnerFolderCanWriteDocument = do
           , RelationTuple contosoGroupObject "member" bethAccountSubject
           , RelationTuple fabrikamObject "member" charlesAccountSubject
           ]
-  aclResult <- assertRight "" (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") (This "user")))
+
+  (aclResult, _) <- assertRight "" =<< (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") "owner" (This "user")))
   assertEqual
     "Unexpected results"
     (Set.singleton (annAccountSubject))
     aclResult
 
-  void $
-    assertRight
-      (Text.unpack $ "Could not validate doc:2021-roadmap#can_write@user:anne")
-      (check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject)
+  aclResult2 <- check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject
+  assertEqual
+    "Could not validate doc:2021-roadmap#can_write@user:anne"
+    ( Right
+        ( True
+        , Map.fromList
+            [ ("can_write", Seq.fromList ["0 | ComputedSubjectSet on #owner", "1 | owner from parent", "2 | ComputedSubjectSet on #owner", "3 | _this user", "4 | _this user"])
+            , ("owner", Seq.fromList ["5 | _this user"])
+            , ("parent", Seq.fromList ["6 | _this folder"])
+            ]
+        )
+    )
+    aclResult2

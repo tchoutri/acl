@@ -60,8 +60,10 @@ library
     ACL.Types.RelationTuple
     ACL.Types.RewriteRule
     ACL.Types.Subject
+    ACL.Types.Trace
 
   build-depends:
+    atomic-counter,
     base ^>=4.20.0.0,
     containers,
     effectful-core,
@@ -90,9 +92,9 @@ test-suite acl-test
     ACL.Test.DisplayTest
     ACL.Test.Fixtures
     ACL.Test.RewriteRulesTest
+    ACL.Test.RewriteRulesTest.BlocklistTest
     ACL.Test.RewriteRulesTest.FolderDocumentsTest
     ACL.Test.RewriteRulesTest.OrgsPlansTest
-    ACL.Test.RewriteRulesTest.TeamTest
     ACL.Test.Utils
 
   build-depends:

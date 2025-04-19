@@ -1,7 +1,6 @@
 module ACL.Types.Namespace where
 
 import Data.Map.Strict (Map)
-import Data.Text
 import Data.Text.Display
 
 import ACL.Types.NamespaceId
@@ -9,7 +8,7 @@ import ACL.Types.RewriteRule
 
 data Namespace = Namespace
   { namespaceId :: NamespaceId
-  , relations :: Map Text RewriteRules
+  , relations :: Map RuleName RewriteRules
   }
   deriving stock (Eq, Ord, Show)
 

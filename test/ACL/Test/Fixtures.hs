@@ -64,7 +64,7 @@ trenitaliaOrgSubject = Subject $ EndSubject "org" "trenitalia"
 planNamespace :: Namespace
 planNamespace =
   let r1 = Union (Set.singleton (This "org"))
-      r2 = Union (Set.fromList [TupleSetChild "member" "subscriber"])
+      r2 = Union (Set.fromList ["member" `from` "subscriber"])
    in Namespace
         { namespaceId = "plan"
         , relations =
@@ -77,7 +77,7 @@ planNamespace =
 featuresNamespace :: Namespace
 featuresNamespace =
   let r1 = Union (Set.singleton (This "plan"))
-      r2 = Union (Set.singleton (TupleSetChild "subscriber_member" "associated_plan"))
+      r2 = Union (Set.singleton ("subscriber_member" `from` "associated_plan"))
    in Namespace
         { namespaceId = "feature"
         , relations =
