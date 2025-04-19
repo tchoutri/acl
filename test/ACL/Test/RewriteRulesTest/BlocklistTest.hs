@@ -30,9 +30,14 @@ testThatBlocklistWorks = do
   let userNamespace = Namespace "user" Map.empty
   let documentNamespace =
         let editorRelation = Union (Set.fromList [This "user", "member" `from` "team"])
+            blockedRelation = Union (Set.singleton (This "user"))
          in Namespace
               { namespaceId = "document"
-              , relations = Map.fromList [("editor", editorRelation)]
+              , relations =
+                  Map.fromList
+                    [ ("editor", editorRelation)
+                    , ("blocked", blockedRelation)
+                    ]
               }
   let memberRelation = Union (Set.fromList [This "user"])
   let teamNamespace =
@@ -68,5 +73,10 @@ testThatBlocklistWorks = do
   aclResult1 <- assertRight "" =<< check namespaces relationTuples (documentPlanning, "editor") userBecky
   assertEqual
     "is user:becky related to document:planning as editor?"
-    (True, Map.fromList [("editor", Seq.fromList ["0 | _this user", "1 | member from team", "2 | ComputedSubjectSet on #member", "3 | _this user"])])
+    ( True
+    , Map.fromList
+        [ ("blocked", Seq.fromList ["0 | _this user"])
+        , ("editor", Seq.fromList ["1 | _this user", "2 | member from team", "3 | ComputedSubjectSet on #member", "4 | _this user"])
+        ]
+    )
     aclResult1
