@@ -8,7 +8,7 @@ import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
 import Effectful
-import Effectful.Error.Static (Error, throwError)
+import Effectful.Error.Static (Error)
 import Effectful.State.Static.Local (State)
 import Optics.Core
 
@@ -20,6 +20,8 @@ import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
 import ACL.Types.Subject
+import qualified Effectful.State.Static.Local as State
+import Data.Text.Display
 
 check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> Either CheckError (Bool, Seq Text)
 check namespaces relations (obj, rel) user =
@@ -55,7 +57,8 @@ expandRewriteRuleChild
   -> Child
   -> Eff es (Set Subject)
 expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
-  This targetNamepace ->
+  This targetNamepace -> do
+    State.modify (\s -> s Seq.|> ("This " <> display targetNamepace))
     relationTuples
       & Set.filter (\r -> r.object == object && r.relationName == relationName && isEndSubject r.subject)
       & Set.foldr'
@@ -69,9 +72,11 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) = \case
       & Set.map Subject
       & pure
   ComputedSubjectSet relName -> do
+    State.modify (\s -> s Seq.|> ("ComputedSubjectSet " <> display relName))
     let filteredRelations = Set.filter (\r -> r.relationName == relName && r.object == object) relationTuples
     pure $ Set.map (\r -> r.subject) filteredRelations
   TupleSetChild computedRelation tuplesetRelation -> do
+    State.modify (\s -> s Seq.|> (computedRelation <> " from " <> tuplesetRelation ))
     -- 1. Fetch all users with the (object, tuplesetRelation) key in relationTuples
     (subjectSet :: Set Subject) <-
       expandRewriteRuleChild namespaces relationTuples (object, "") (ComputedSubjectSet tuplesetRelation)
