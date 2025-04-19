@@ -4,9 +4,6 @@ This package models an Access Control List (ACL) system with Google's [Zanzibar]
 
 Examples are taken from Okta's [OpenFGA Sandbox].
 
-[Zanzibar]: https://storage.googleapis.com/gweb-research2023-media/pubtools/5068.pdf
-[OpenFGA]: https://play.fga.dev/sandbox/?store=entitlements
-
 ## Terminology
 
 ACL entries are three-tuples of an object, a relation and a subject (called subject in the Zanzibar paper).
@@ -94,3 +91,6 @@ For instance, the `reader` relation can be defined in terms of the membership to
 ```
 doc:document1#reader@group:guests#member
 ```
+
+[Zanzibar]: https://storage.googleapis.com/gweb-research2023-media/pubtools/5068.pdf
+[OpenFGA Sandbox]: https://play.fga.dev/sandbox/?store=entitlements
