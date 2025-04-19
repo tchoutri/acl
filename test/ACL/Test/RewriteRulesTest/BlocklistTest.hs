@@ -3,9 +3,6 @@ module ACL.Test.RewriteRulesTest.BlocklistTest where
 import Data.Map.Strict qualified as Map
 import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
-import Data.Text qualified as Text
-import Data.Text.Display
-import Debug.Trace
 import Test.Tasty
 import Test.Tasty.HUnit
 
@@ -29,10 +26,15 @@ testThatBlocklistWorks :: Assertion
 testThatBlocklistWorks = do
   let userNamespace = Namespace "user" Map.empty
   let documentNamespace =
-        let editorRelation = Union (Set.fromList [This "user", "member" `from` "team"])
+        let editorRelation = Difference (Set.fromList [This "user", "member" `from` "team"]) (Set.singleton (ComputedSubjectSet "blocked"))
+            blockedRelation = Union (Set.singleton (This "user"))
          in Namespace
               { namespaceId = "document"
-              , relations = Map.fromList [("editor", editorRelation)]
+              , relations =
+                  Map.fromList
+                    [ ("editor", editorRelation)
+                    , ("blocked", blockedRelation)
+                    ]
               }
   let memberRelation = Union (Set.fromList [This "user"])
   let teamNamespace =
@@ -53,6 +55,7 @@ testThatBlocklistWorks = do
   let relationTuples =
         Set.fromList
           [ RelationTuple documentPlanning "editor" (SubjectSet $ SubjectSetTuple teamProduct (Just "member"))
+          , RelationTuple documentPlanning "blocked" userCarl
           , RelationTuple teamProduct "member" userBecky
           , RelationTuple teamProduct "member" userCarl
           ]
@@ -64,9 +67,24 @@ testThatBlocklistWorks = do
     (Set.fromList [Subject (EndSubject "user" "becky"), Subject (EndSubject "user" "carl")], Map.fromList [("member", Seq.fromList ["0 | _this user"])])
     aclResult0
 
-  traceM $ Text.unpack $ "relation tuples: " <> (display $ Set.toList relationTuples)
   aclResult1 <- assertRight "" =<< check namespaces relationTuples (documentPlanning, "editor") userBecky
   assertEqual
     "is user:becky related to document:planning as editor?"
-    (True, Map.fromList [("editor", Seq.fromList ["0 | _this user", "1 | member from team", "2 | ComputedSubjectSet on #member", "3 | _this user"])])
+    ( True
+    , Map.fromList
+        [ ("blocked", Seq.fromList ["0 | _this user"])
+        , ("editor", Seq.fromList ["1 | _this user", "2 | member from team", "3 | ComputedSubjectSet on #member", "4 | _this user", "5 | _this user", "6 | ComputedSubjectSet on #blocked"])
+        ]
+    )
     aclResult1
+
+  aclResult2 <- assertRight "" =<< check namespaces relationTuples (documentPlanning, "editor") userCarl
+  assertEqual
+    "is user:carl related to document:planning as editor?"
+    ( False
+    , Map.fromList
+        [ ("blocked", Seq.fromList ["0 | _this user"])
+        , ("editor", Seq.fromList ["1 | _this user", "2 | member from team", "3 | ComputedSubjectSet on #member", "4 | _this user", "5 | _this user", "6 | ComputedSubjectSet on #blocked"])
+        ]
+    )
+    aclResult2
