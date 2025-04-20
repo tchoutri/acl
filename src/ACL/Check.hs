@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedRecordDot #-}
 module ACL.Check where
 
 import Control.Concurrent.Counter (Counter)
@@ -106,15 +107,13 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
     if Set.null objectSet
       then do
         registerTrace ruleName ("Empty objectSet for " <> computedRelation)
-        pure $ Set.empty
+        pure Set.empty
       else do
         let newObjectsNamespaceId = (Set.elemAt 0 objectSet).namespaceId
             mRewriteRules =
               case Map.lookup newObjectsNamespaceId namespaces of
                 Nothing -> Nothing
-                Just namespace -> case Map.lookup (RuleName computedRelation) namespace.relations of
-                  Nothing -> Nothing
-                  Just newRewriteRules -> Just newRewriteRules
+                Just namespace -> Map.lookup (RuleName computedRelation) namespace.relations
          in case mRewriteRules of
               Nothing -> pure Set.empty
               Just rewriteRules -> do

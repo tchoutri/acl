@@ -5,3 +5,6 @@
 - ignore: {name: "Use newtype instead of data"}
 - ignore: {name: "Use newtype instead of data"}
 - ignore: {name: "Use tuple-section"}
+
+- extensions:
+  - name: [ DataKinds , DeriveAnyClass , DerivingVia , DuplicateRecordFields , LambdaCase , MagicHash , NoStarIsType , OverloadedLabels , OverloadedRecordDot , OverloadedStrings , PackageImports , RecordWildCards , StrictData , TypeFamilies ]
