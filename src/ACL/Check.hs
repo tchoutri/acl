@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedRecordDot #-}
+
 module ACL.Check where
 
 import Control.Concurrent.Counter (Counter)
@@ -12,6 +13,7 @@ import Data.Text (Text)
 import Data.Text.Display
 import Effectful
 import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Local (State)
 import Optics.Core
@@ -46,8 +48,10 @@ check' namespaces relations (obj, rel) user =
       let processRule ruleName rule = do
             haystack <- expandRewriteRules namespaces relations (obj, rel) rule ruleName
             pure $ user `Set.member` haystack
-      result <- Map.traverseWithKey processRule namespace.relations
-      pure $ or result
+      case Map.lookup (RuleName rel) namespace.relations of
+        Nothing -> Error.throwError $ NonExistentRule (RuleName rel)
+        Just rules -> do
+          processRule (RuleName rel) rules
 
 expandRewriteRules
   :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)
@@ -69,6 +73,10 @@ expandRewriteRules namespaces relations needle (Difference children1 children2) 
   set1 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children1)
   set2 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children2)
   pure $ Set.difference (mconcat set1) (mconcat set2)
+expandRewriteRules namespaces relations needle (Intersection children1 children2) ruleName = do
+  set1 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children1)
+  set2 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children2)
+  pure $ Set.intersection (mconcat set1) (mconcat set2)
 
 expandRewriteRuleChild
   :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)

@@ -69,14 +69,7 @@ testSimpleRewriteRule = do
   void $
     assertEqual
       "Beatrice is not member of SNCF"
-      ( Right
-          ( True
-          , Map.fromList
-              [ ("admin", Seq.fromList ["0 | _this user"])
-              , ("member", Seq.fromList ["1 | _this user", "2 | ComputedSubjectSet on #admin"])
-              ]
-          )
-      )
+      (Right (True, Map.fromList [("member", Seq.fromList ["0 | _this user", "1 | ComputedSubjectSet on #admin"])]))
       aclResult1
 
 testComputedSubjectSet :: Assertion
@@ -111,7 +104,7 @@ testComputedSubjectSet = do
   void $
     assertEqual
       "Beatrice can be seen as a member of SNCF due to being Admin"
-      (True, Map.fromList [("admin", Seq.fromList ["0 | _this user"]), ("member", Seq.fromList ["1 | _this user", "2 | ComputedSubjectSet on #admin"])])
+      (True, Map.fromList [("member", Seq.fromList ["0 | _this user", "1 | ComputedSubjectSet on #admin"])])
       aclResult3
 
 testTupleToSubjectset :: Assertion
@@ -194,10 +187,5 @@ testTransitiveAccessBySubscriberMembers = do
   void $
     assertEqual
       (Text.unpack $ "Charlie can access SE Bank ID through SNCF's subscription to Enterprise plan" <> display step3Relation <> ")")
-      ( True
-      , Map.fromList
-          [ ("associated_plan", Seq.fromList ["0 | _this plan"])
-          , ("can_access", Seq.fromList ["1 | subscriber_member from associated_plan", "2 | ComputedSubjectSet on #subscriber_member", "3 | member from subscriber", "4 | ComputedSubjectSet on #member", "5 | _this user", "6 | ComputedSubjectSet on #admin"])
-          ]
-      )
+      (True, Map.fromList [("can_access", Seq.fromList ["0 | subscriber_member from associated_plan", "1 | ComputedSubjectSet on #subscriber_member", "2 | member from subscriber", "3 | ComputedSubjectSet on #member", "4 | _this user", "5 | ComputedSubjectSet on #admin"])])
       aclResult3

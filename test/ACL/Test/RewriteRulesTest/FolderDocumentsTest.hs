@@ -101,16 +101,8 @@ testParentOwnerFolderCanWriteDocument = do
     (Set.singleton annAccountSubject)
     aclResult
 
-  aclResult2 <- check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject
+  aclResult2 <- assertRight "" =<< check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject
   assertEqual
     "Could not validate doc:2021-roadmap#can_write@user:anne"
-    ( Right
-        ( True
-        , Map.fromList
-            [ ("can_write", Seq.fromList ["0 | ComputedSubjectSet on #owner", "1 | owner from parent", "2 | ComputedSubjectSet on #owner", "3 | _this user", "4 | _this user"])
-            , ("owner", Seq.fromList ["5 | _this user"])
-            , ("parent", Seq.fromList ["6 | _this folder"])
-            ]
-        )
-    )
+    (True, Map.fromList [("can_write", Seq.fromList ["0 | ComputedSubjectSet on #owner", "1 | owner from parent", "2 | ComputedSubjectSet on #owner", "3 | _this user", "4 | _this user"])])
     aclResult2

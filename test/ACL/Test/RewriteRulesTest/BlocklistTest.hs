@@ -70,21 +70,11 @@ testThatBlocklistWorks = do
   aclResult1 <- assertRight "" =<< check namespaces relationTuples (documentPlanning, "editor") userBecky
   assertEqual
     "is user:becky related to document:planning as editor?"
-    ( True
-    , Map.fromList
-        [ ("blocked", Seq.fromList ["0 | _this user"])
-        , ("editor", Seq.fromList ["1 | _this user", "2 | member from team", "3 | ComputedSubjectSet on #member", "4 | _this user", "5 | _this user", "6 | ComputedSubjectSet on #blocked"])
-        ]
-    )
+    (True, Map.fromList [("editor", Seq.fromList ["0 | _this user", "1 | member from team", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | ComputedSubjectSet on #blocked"])])
     aclResult1
 
   aclResult2 <- assertRight "" =<< check namespaces relationTuples (documentPlanning, "editor") userCarl
   assertEqual
     "is user:carl related to document:planning as editor?"
-    ( False
-    , Map.fromList
-        [ ("blocked", Seq.fromList ["0 | _this user"])
-        , ("editor", Seq.fromList ["1 | _this user", "2 | member from team", "3 | ComputedSubjectSet on #member", "4 | _this user", "5 | _this user", "6 | ComputedSubjectSet on #blocked"])
-        ]
-    )
+    (False, Map.fromList [("editor", Seq.fromList ["0 | _this user", "1 | member from team", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | ComputedSubjectSet on #blocked"])])
     aclResult2

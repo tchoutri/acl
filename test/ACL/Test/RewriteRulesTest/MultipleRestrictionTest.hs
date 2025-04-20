@@ -22,7 +22,8 @@ spec =
   testGroup
     "Multiple Restrictions"
     [ testCase "Computed subjectset can_write" (testComputedSubjectSetCanWrite fixtures)
-    , testCase "Rules intersection can_delete" (testRulesIntersectionCanDelete fixtures)
+    , testCase "Becky can delete document:planning" (testRulesIntersectionCanDeleteBecky fixtures)
+    , testCase "Carl cannot delete document:planning" (testRulesIntersectionCanDeleteCarl fixtures)
     ]
 
 fixtures :: (Map NamespaceId Namespace, Set RelationTuple)
@@ -76,63 +77,41 @@ testComputedSubjectSetCanWrite (namespaces, relationTuples) = do
   let planningDoc = Object "document" "planning"
   let userBecky = Subject $ EndSubject "user" "becky"
   let userCarl = Subject $ EndSubject "user" "carl"
-  aclResult0 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_writer") userBecky
+  aclResult0 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_write") userBecky
 
   assertEqual
     "Becky is not a writer of document:planning!"
-    ( True
-    , Map.fromList
-        [ ("can_delete", Seq.fromList ["0 | ComputedSubjectSet on #writer", "1 | member from owner", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | _this user"])
-        , ("can_write", Seq.fromList ["6 | ComputedSubjectSet on #writer"])
-        , ("owner", Seq.fromList ["7 | _this org"])
-        , ("writer", Seq.fromList ["8 | _this user"])
-        ]
-    )
+    (True, Map.fromList [("can_write", Seq.fromList ["0 | ComputedSubjectSet on #writer"])])
     aclResult0
 
-  aclResult1 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_writer") userCarl
+  aclResult1 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_write") userCarl
 
   assertEqual
     "Carl is not a writer of document:planning!"
-    ( True
-    , Map.fromList
-        [ ("can_delete", Seq.fromList ["0 | ComputedSubjectSet on #writer", "1 | member from owner", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | _this user"])
-        , ("can_write", Seq.fromList ["6 | ComputedSubjectSet on #writer"])
-        , ("owner", Seq.fromList ["7 | _this org"])
-        , ("writer", Seq.fromList ["8 | _this user"])
-        ]
-    )
+    (True, Map.fromList [("can_write", Seq.fromList ["0 | ComputedSubjectSet on #writer"])])
     aclResult1
 
-testRulesIntersectionCanDelete :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
-testRulesIntersectionCanDelete (namespaces, relationTuples) = do
+testRulesIntersectionCanDeleteBecky :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
+testRulesIntersectionCanDeleteBecky (namespaces, relationTuples) = do
   let planningDoc = Object "document" "planning"
   let userBecky = Subject $ EndSubject "user" "becky"
-  let userCarl = Subject $ EndSubject "user" "carl"
   aclResult0 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_delete") userBecky
 
   assertEqual
     "Becky is not a member of an owner org of document:planning!"
     ( True
     , Map.fromList
-        [ ("can_delete", Seq.fromList ["0 | ComputedSubjectSet on #writer", "1 | member from owner", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | _this user"])
-        , ("can_write", Seq.fromList ["6 | ComputedSubjectSet on #writer"])
-        , ("owner", Seq.fromList ["7 | _this org"])
-        , ("writer", Seq.fromList ["8 | _this user"])
-        ]
+        [("can_delete", Seq.fromList ["0 | ComputedSubjectSet on #writer", "1 | member from owner", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | _this user"])]
     )
     aclResult0
 
+testRulesIntersectionCanDeleteCarl :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
+testRulesIntersectionCanDeleteCarl (namespaces, relationTuples) = do
+  let planningDoc = Object "document" "planning"
+  let userCarl = Subject $ EndSubject "user" "carl"
   aclResult1 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_delete") userCarl
 
   assertEqual
     "Carl is a member of an owner org of document:planning!"
-    ( False
-    , Map.fromList
-        [ ("can_delete", Seq.fromList ["0 | ComputedSubjectSet on #writer", "1 | member from owner", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | _this user"])
-        , ("can_write", Seq.fromList ["6 | ComputedSubjectSet on #writer"])
-        , ("owner", Seq.fromList ["7 | _this org"])
-        , ("writer", Seq.fromList ["8 | _this user"])
-        ]
-    )
+    (False, Map.fromList [("can_delete", Seq.fromList ["0 | ComputedSubjectSet on #writer", "1 | member from owner", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | _this user"])])
     aclResult1
