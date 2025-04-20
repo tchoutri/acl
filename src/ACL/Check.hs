@@ -25,9 +25,9 @@ import ACL.Types.RewriteRule
 import ACL.Types.Subject
 import ACL.Types.Trace
 
-check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> IO (Either CheckError (Bool, (Map RuleName (Seq Text))))
+check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> IO (Either CheckError (Bool, Map RuleName (Seq Text)))
 check namespaces relations (obj, rel) user =
-  if (RelationTuple obj rel user) `Set.member` relations
+  if RelationTuple obj rel user `Set.member` relations
     then pure $ Right (True, Map.singleton "direct" (Seq.singleton "_this"))
     else runACL $ check' namespaces relations (obj, rel) user
 
@@ -56,6 +56,8 @@ expandRewriteRules
   -> RewriteRules
   -> RuleName
   -> Eff es (Set Subject)
+expandRewriteRules namespaces relations needle (Single children) ruleName = do
+  expandRewriteRuleChild namespaces relations needle ruleName children
 expandRewriteRules namespaces relations needle (Union children) ruleName = do
   expanded <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children)
   pure $
@@ -82,7 +84,7 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
       & Set.filter (\r -> r.object == object && r.relationName == relationName && isEndSubject r.subject)
       & Set.foldr'
         ( \r acc ->
-            case (r ^. #subject ^? _EndSubject) of
+            case r ^. #subject ^? _EndSubject of
               Just subject -> Set.insert subject acc
               Nothing -> acc
         )

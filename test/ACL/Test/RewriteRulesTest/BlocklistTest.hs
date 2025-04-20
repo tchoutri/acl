@@ -27,7 +27,7 @@ testThatBlocklistWorks = do
   let userNamespace = Namespace "user" Map.empty
   let documentNamespace =
         let editorRelation = Difference (Set.fromList [This "user", "member" `from` "team"]) (Set.singleton (ComputedSubjectSet "blocked"))
-            blockedRelation = Union (Set.singleton (This "user"))
+            blockedRelation = Single (This "user")
          in Namespace
               { namespaceId = "document"
               , relations =
@@ -36,7 +36,7 @@ testThatBlocklistWorks = do
                     , ("blocked", blockedRelation)
                     ]
               }
-  let memberRelation = Union (Set.fromList [This "user"])
+  let memberRelation = Single (This "user")
   let teamNamespace =
         Namespace
           { namespaceId = "document"
@@ -60,7 +60,7 @@ testThatBlocklistWorks = do
           , RelationTuple teamProduct "member" userCarl
           ]
 
-  aclResult0 <- assertRight "" =<< (runACL $ expandRewriteRules namespaces relationTuples (teamProduct, "member") memberRelation "member")
+  aclResult0 <- assertRight "" =<< runACL (expandRewriteRules namespaces relationTuples (teamProduct, "member") memberRelation "member")
 
   assertEqual
     "Becky is not part of the members of team:product!"

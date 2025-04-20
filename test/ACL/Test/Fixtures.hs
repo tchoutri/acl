@@ -37,7 +37,7 @@ userNamespace =
 organisationNamespace :: Namespace
 organisationNamespace =
   let memberRule = Union (Set.fromList [This "user", ComputedSubjectSet "admin"])
-      adminRule = Union (Set.singleton (This "user"))
+      adminRule = Single (This "user")
    in Namespace
         { namespaceId = "org"
         , relations =
@@ -63,8 +63,8 @@ trenitaliaOrgSubject = Subject $ EndSubject "org" "trenitalia"
 
 planNamespace :: Namespace
 planNamespace =
-  let r1 = Union (Set.singleton (This "org"))
-      r2 = Union (Set.fromList ["member" `from` "subscriber"])
+  let r1 = Single (This "org")
+      r2 = Single ("member" `from` "subscriber")
    in Namespace
         { namespaceId = "plan"
         , relations =
@@ -76,8 +76,8 @@ planNamespace =
 
 featuresNamespace :: Namespace
 featuresNamespace =
-  let r1 = Union (Set.singleton (This "plan"))
-      r2 = Union (Set.singleton ("subscriber_member" `from` "associated_plan"))
+  let r1 = Single (This "plan")
+      r2 = Single ("subscriber_member" `from` "associated_plan")
    in Namespace
         { namespaceId = "feature"
         , relations =
