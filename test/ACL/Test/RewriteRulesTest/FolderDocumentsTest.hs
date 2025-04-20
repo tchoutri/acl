@@ -26,14 +26,14 @@ testParentOwnerFolderCanWriteDocument :: Assertion
 testParentOwnerFolderCanWriteDocument = do
   let userNamespace = Namespace "user" Map.empty
 
-  let groupRelations = Map.fromList [("member", Union (Set.singleton (This "user")))]
+  let groupRelations = Map.fromList [("member", Single (This "user"))]
       groupNamespace = Namespace "group" groupRelations
 
   let folderRelations =
         Map.fromList
-          [ ("owner", Union (Set.singleton (This "user")))
-          , ("parent", Union (Set.singleton (This "folder")))
-          , ("can_create_file", Union (Set.singleton (ComputedSubjectSet "owner")))
+          [ ("owner", Single (This "user"))
+          , ("parent", Single (This "folder"))
+          , ("can_create_file", Single (ComputedSubjectSet "owner"))
           ,
             ( "viewer"
             , Union $
@@ -48,8 +48,8 @@ testParentOwnerFolderCanWriteDocument = do
 
   let docRelations =
         Map.fromList
-          [ ("owner", Union $ Set.singleton (This "user"))
-          , ("parent", Union $ Set.singleton (This "folder"))
+          [ ("owner", Single (This "user"))
+          , ("parent", Single (This "folder"))
           ,
             ( "can_write"
             , Union $
@@ -95,22 +95,14 @@ testParentOwnerFolderCanWriteDocument = do
           , RelationTuple fabrikamObject "member" charlesAccountSubject
           ]
 
-  (aclResult, _) <- assertRight "" =<< (runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") "owner" (This "user")))
+  (aclResult, _) <- assertRight "" =<< runACL (expandRewriteRuleChild namespaces relationTuples (folderProduct2021Object, "owner") "owner" (This "user"))
   assertEqual
     "Unexpected results"
-    (Set.singleton (annAccountSubject))
+    (Set.singleton annAccountSubject)
     aclResult
 
-  aclResult2 <- check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject
+  aclResult2 <- assertRight "" =<< check namespaces relationTuples (doc2021RoadmapObject, "can_write") annAccountSubject
   assertEqual
     "Could not validate doc:2021-roadmap#can_write@user:anne"
-    ( Right
-        ( True
-        , Map.fromList
-            [ ("can_write", Seq.fromList ["0 | ComputedSubjectSet on #owner", "1 | owner from parent", "2 | ComputedSubjectSet on #owner", "3 | _this user", "4 | _this user"])
-            , ("owner", Seq.fromList ["5 | _this user"])
-            , ("parent", Seq.fromList ["6 | _this folder"])
-            ]
-        )
-    )
+    (True, Map.fromList [("can_write", Seq.fromList ["0 | ComputedSubjectSet on #owner", "1 | owner from parent", "2 | ComputedSubjectSet on #owner", "3 | _this user", "4 | _this user"])])
     aclResult2

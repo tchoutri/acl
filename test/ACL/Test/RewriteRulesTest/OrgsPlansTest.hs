@@ -42,7 +42,7 @@ testExpectedSubjectsForThis = do
           , RelationTuple sncfOrgObject "member" charlieAccountSubject
           , RelationTuple sncfOrgObject "member" kevinTaxInspectorSubject
           ]
-  (aclResult1, _) <- assertRight "" =<< (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") (This "user"))
+  (aclResult1, _) <- assertRight "" =<< runACL (expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") (This "user"))
 
   assertEqual
     "Unexpected result for _this subjects"
@@ -69,14 +69,7 @@ testSimpleRewriteRule = do
   void $
     assertEqual
       "Beatrice is not member of SNCF"
-      ( Right
-          ( True
-          , Map.fromList
-              [ ("admin", Seq.fromList ["0 | _this user"])
-              , ("member", Seq.fromList ["1 | _this user", "2 | ComputedSubjectSet on #admin"])
-              ]
-          )
-      )
+      (Right (True, Map.fromList [("member", Seq.fromList ["0 | _this user", "1 | ComputedSubjectSet on #admin"])]))
       aclResult1
 
 testComputedSubjectSet :: Assertion
@@ -91,7 +84,7 @@ testComputedSubjectSet = do
           , RelationTuple sncfOrgObject "admin" beatriceAccountSubject
           ]
 
-  (aclResult1, _) <- assertRight "" =<< (runACL $ expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") (ComputedSubjectSet "admin"))
+  (aclResult1, _) <- assertRight "" =<< runACL (expandRewriteRuleChild namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") (ComputedSubjectSet "admin"))
   assertEqual
     "Could not find user Beatrice when evaluating computed user set child rule"
     (Set.singleton beatriceAccountSubject)
@@ -101,7 +94,7 @@ testComputedSubjectSet = do
     assertJust $
       Map.lookup (RuleName "member") organisationNamespace.relations
 
-  (aclResult2, _) <- assertRight "" =<< (runACL $ expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules (RuleName "member"))
+  (aclResult2, _) <- assertRight "" =<< runACL (expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules (RuleName "member"))
   assertEqual
     "Could not find user Beatrice for computed user set"
     (Set.singleton beatriceAccountSubject)
@@ -111,7 +104,7 @@ testComputedSubjectSet = do
   void $
     assertEqual
       "Beatrice can be seen as a member of SNCF due to being Admin"
-      (True, Map.fromList [("admin", Seq.fromList ["0 | _this user"]), ("member", Seq.fromList ["1 | _this user", "2 | ComputedSubjectSet on #admin"])])
+      (True, Map.fromList [("member", Seq.fromList ["0 | _this user", "1 | ComputedSubjectSet on #admin"])])
       aclResult3
 
 testTupleToSubjectset :: Assertion
@@ -133,7 +126,7 @@ testTupleToSubjectset = do
           , RelationTuple sncfOrgObject "admin" charlieAccountSubject
           ]
 
-  (aclResult, _) <- assertRight "" =<< (runACL $ expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") "subscriber_member" ("member" `from` "subscriber"))
+  (aclResult, _) <- assertRight "" =<< runACL (expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") "subscriber_member" ("member" `from` "subscriber"))
 
   assertEqual
     "Tupleset Child rule is not correctly expanded"
@@ -194,10 +187,5 @@ testTransitiveAccessBySubscriberMembers = do
   void $
     assertEqual
       (Text.unpack $ "Charlie can access SE Bank ID through SNCF's subscription to Enterprise plan" <> display step3Relation <> ")")
-      ( True
-      , Map.fromList
-          [ ("associated_plan", Seq.fromList ["0 | _this plan"])
-          , ("can_access", Seq.fromList ["1 | subscriber_member from associated_plan", "2 | ComputedSubjectSet on #subscriber_member", "3 | member from subscriber", "4 | ComputedSubjectSet on #member", "5 | _this user", "6 | ComputedSubjectSet on #admin"])
-          ]
-      )
+      (True, Map.fromList [("can_access", Seq.fromList ["0 | subscriber_member from associated_plan", "1 | ComputedSubjectSet on #subscriber_member", "2 | member from subscriber", "3 | ComputedSubjectSet on #member", "4 | _this user", "5 | ComputedSubjectSet on #admin"])])
       aclResult3

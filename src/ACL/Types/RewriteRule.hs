@@ -10,9 +10,16 @@ newtype RuleName = RuleName Text
   deriving newtype (Eq, IsString, Ord, Show)
 
 data RewriteRules
-  = Union (Set Child)
+  = -- | A single rule
+    Single Child
+  | -- | Return all children in the set
+    Union (Set Child)
   | -- | Return elements of the first set not existing in the second set
     Difference
+      (Set Child)
+      (Set Child)
+  | -- | Return elements that belong to both sets
+    Intersection
       (Set Child)
       (Set Child)
   deriving stock (Eq, Ord, Show)

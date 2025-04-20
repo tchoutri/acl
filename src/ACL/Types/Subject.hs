@@ -47,7 +47,7 @@ data SubjectSetTuple = SubjectSetTuple
 
 instance Display SubjectSetTuple where
   displayBuilder (SubjectSetTuple o mr) =
-    displayBuilder o <> (maybe "" (\r -> "#" <> displayBuilder r) mr)
+    displayBuilder o <> maybe "" (\r -> "#" <> displayBuilder r) mr
 
 objectToSubject :: Object -> Subject
 objectToSubject o = Subject (EndSubject o.namespaceId o.identifier)

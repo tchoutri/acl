@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedRecordDot #-}
+
 module ACL.Check where
 
 import Control.Concurrent.Counter (Counter)
@@ -11,6 +13,7 @@ import Data.Text (Text)
 import Data.Text.Display
 import Effectful
 import Effectful.Error.Static (Error)
+import Effectful.Error.Static qualified as Error
 import Effectful.Reader.Static (Reader)
 import Effectful.State.Static.Local (State)
 import Optics.Core
@@ -25,9 +28,9 @@ import ACL.Types.RewriteRule
 import ACL.Types.Subject
 import ACL.Types.Trace
 
-check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> IO (Either CheckError (Bool, (Map RuleName (Seq Text))))
+check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> IO (Either CheckError (Bool, Map RuleName (Seq Text)))
 check namespaces relations (obj, rel) user =
-  if (RelationTuple obj rel user) `Set.member` relations
+  if RelationTuple obj rel user `Set.member` relations
     then pure $ Right (True, Map.singleton "direct" (Seq.singleton "_this"))
     else runACL $ check' namespaces relations (obj, rel) user
 
@@ -45,8 +48,10 @@ check' namespaces relations (obj, rel) user =
       let processRule ruleName rule = do
             haystack <- expandRewriteRules namespaces relations (obj, rel) rule ruleName
             pure $ user `Set.member` haystack
-      result <- Map.traverseWithKey processRule namespace.relations
-      pure $ or result
+      case Map.lookup (RuleName rel) namespace.relations of
+        Nothing -> Error.throwError $ NonExistentRule (RuleName rel)
+        Just rules -> do
+          processRule (RuleName rel) rules
 
 expandRewriteRules
   :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)
@@ -56,6 +61,8 @@ expandRewriteRules
   -> RewriteRules
   -> RuleName
   -> Eff es (Set Subject)
+expandRewriteRules namespaces relations needle (Single children) ruleName = do
+  expandRewriteRuleChild namespaces relations needle ruleName children
 expandRewriteRules namespaces relations needle (Union children) ruleName = do
   expanded <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children)
   pure $
@@ -66,6 +73,10 @@ expandRewriteRules namespaces relations needle (Difference children1 children2) 
   set1 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children1)
   set2 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children2)
   pure $ Set.difference (mconcat set1) (mconcat set2)
+expandRewriteRules namespaces relations needle (Intersection children1 children2) ruleName = do
+  set1 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children1)
+  set2 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children2)
+  pure $ Set.intersection (mconcat set1) (mconcat set2)
 
 expandRewriteRuleChild
   :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)
@@ -82,7 +93,7 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
       & Set.filter (\r -> r.object == object && r.relationName == relationName && isEndSubject r.subject)
       & Set.foldr'
         ( \r acc ->
-            case (r ^. #subject ^? _EndSubject) of
+            case r ^. #subject ^? _EndSubject of
               Just subject -> Set.insert subject acc
               Nothing -> acc
         )
@@ -104,15 +115,13 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
     if Set.null objectSet
       then do
         registerTrace ruleName ("Empty objectSet for " <> computedRelation)
-        pure $ Set.empty
+        pure Set.empty
       else do
         let newObjectsNamespaceId = (Set.elemAt 0 objectSet).namespaceId
             mRewriteRules =
               case Map.lookup newObjectsNamespaceId namespaces of
                 Nothing -> Nothing
-                Just namespace -> case Map.lookup (RuleName computedRelation) namespace.relations of
-                  Nothing -> Nothing
-                  Just newRewriteRules -> Just newRewriteRules
+                Just namespace -> Map.lookup (RuleName computedRelation) namespace.relations
          in case mRewriteRules of
               Nothing -> pure Set.empty
               Just rewriteRules -> do
