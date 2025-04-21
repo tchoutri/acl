@@ -38,7 +38,7 @@ fixtures =
                 )
                 (Single (ComputedSubjectSet "editor"))
             editorRelation =
-              Single ("assignee" `from` "user")
+              Single ("assignee" `from` "role")
          in Namespace
               "asset-category"
               ( Map.fromList
@@ -69,7 +69,7 @@ fixtures =
           [ RelationTuple mediaManagerRole "assignee" userAnn
           , RelationTuple mediaViewerRole "assignee" userBeth
           , RelationTuple logosObject "editor" mediaManagers
-          , RelationTuple logosObject "viewers" mediaViewers
+          , RelationTuple logosObject "viewer" mediaViewers
           ]
    in (namespaces, relationTuples)
 
@@ -94,7 +94,7 @@ testThatAnnIsALogoEditor (namespaces, relationTuples) = do
 
   assertEqual
     "Ann is not an editor of asset-category:logos!"
-    (True, Map.fromList [("editor", Seq.fromList ["0 | assignee from user", "1 | ComputedSubjectSet on #assignee", "2 | _this user", "3 | _this user"])])
+    (True, Map.fromList [("editor", Seq.fromList ["0 | assignee from role", "1 | ComputedSubjectSet on #assignee", "2 | _this user", "3 | _this user"])])
     aclResult
 
 testThatBethNotIsALogoEditor :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion

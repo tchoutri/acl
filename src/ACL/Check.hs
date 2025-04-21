@@ -10,7 +10,9 @@ import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Text qualified as Text
 import Data.Text.Display
+import Debug.Trace
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
@@ -112,7 +114,7 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
       & Set.map Subject
       & pure
   ComputedSubjectSet relName -> do
-    registerTrace ruleName ("ComputedSubjectSet on #" <> display relName)
+    registerTrace ruleName ("ComputedSubjectSet on " <> display object <> "#" <> display relName)
     let filteredRelations = Set.filter (\r -> r.object == object) relationTuples
     pure $ Set.map (\r -> r.subject) filteredRelations
   TupleSetChild computedRelation tuplesetRelation -> do
@@ -120,6 +122,7 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
     -- 1. Fetch all users with the (object, tuplesetRelation) key in relationTuples
     (subjectSet :: Set Subject) <-
       expandRewriteRuleChild namespaces relationTuples (object, tuplesetRelation) ruleName (ComputedSubjectSet computedRelation)
+    traceM $ Text.unpack $ "\n[" <> computedRelation <> " from " <> tuplesetRelation <> "] relations: " <> Text.intercalate ", " (Set.toList $ Set.map display subjectSet)
     -- 2. Use these users as new ojects and fetch all users that have a record for <newObjects#computedRelation> in there
     let objectSet = Set.map userToObject subjectSet
     if Set.null objectSet
