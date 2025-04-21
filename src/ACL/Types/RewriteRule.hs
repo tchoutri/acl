@@ -3,11 +3,12 @@ module ACL.Types.RewriteRule where
 import Data.Set (Set)
 import Data.String (IsString)
 import Data.Text (Text)
+import Data.Text.Display
 
 import ACL.Types.NamespaceId
 
 newtype RuleName = RuleName Text
-  deriving newtype (Eq, IsString, Ord, Show)
+  deriving newtype (Display, Eq, IsString, Ord, Show)
 
 data RewriteRules
   = -- | A single rule

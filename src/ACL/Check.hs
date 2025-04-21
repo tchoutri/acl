@@ -28,7 +28,12 @@ import ACL.Types.RewriteRule
 import ACL.Types.Subject
 import ACL.Types.Trace
 
-check :: Map NamespaceId Namespace -> Set RelationTuple -> (Object, Text) -> Subject -> IO (Either CheckError (Bool, Map RuleName (Seq Text)))
+check
+  :: Map NamespaceId Namespace
+  -> Set RelationTuple
+  -> (Object, Text)
+  -> Subject
+  -> IO (Either CheckError (Bool, Map RuleName (Seq Text)))
 check namespaces relations (obj, rel) user =
   if RelationTuple obj rel user `Set.member` relations
     then pure $ Right (True, Map.singleton "direct" (Seq.singleton "_this"))
@@ -80,7 +85,11 @@ expandRewriteRules namespaces relations needle ruleName (Intersection children1 
   pure $ Set.intersection set1 set2
 
 expandRewriteRuleChild
-  :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)
+  :: ( Error CheckError :> es
+     , IOE :> es
+     , Reader Counter :> es
+     , State (Map RuleName (Seq Text)) :> es
+     )
   => Map NamespaceId Namespace
   -> Set RelationTuple
   -> (Object, Text)

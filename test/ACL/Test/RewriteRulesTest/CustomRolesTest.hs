@@ -23,6 +23,7 @@ spec =
     "Custom Roles"
     [ testCase "Ann is assigned to role media-manager" (testThatAnnIsAMediaManager fixtures)
     , testCase "Ann is an editor of asset-category:logos" (testThatAnnIsALogoEditor fixtures)
+    , testCase "Beth is not an editor of asset-category:logos" (testThatBethNotIsALogoEditor fixtures)
     ]
 
 fixtures :: (Map NamespaceId Namespace, Set RelationTuple)
@@ -37,7 +38,7 @@ fixtures =
                 )
                 (Single (ComputedSubjectSet "editor"))
             editorRelation =
-              Single (This "user")
+              Single ("assignee" `from` "user")
          in Namespace
               "asset-category"
               ( Map.fromList
@@ -84,7 +85,7 @@ testThatAnnIsAMediaManager (namespaces, relationTuples) = do
     (True, Map.fromList [("direct", Seq.fromList ["_this"])])
     aclResult
 
-testThatAnnIsALogoEditor  :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
+testThatAnnIsALogoEditor :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
 testThatAnnIsALogoEditor (namespaces, relationTuples) = do
   let logosObject = Object "asset-category" "logos"
       userAnn = Subject $ EndSubject "user" "ann"
@@ -93,5 +94,17 @@ testThatAnnIsALogoEditor (namespaces, relationTuples) = do
 
   assertEqual
     "Ann is not an editor of asset-category:logos!"
-    (True, Map.fromList [])
+    (True, Map.fromList [("editor", Seq.fromList ["0 | assignee from user", "1 | ComputedSubjectSet on #assignee", "2 | _this user", "3 | _this user"])])
+    aclResult
+
+testThatBethNotIsALogoEditor :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
+testThatBethNotIsALogoEditor (namespaces, relationTuples) = do
+  let logosObject = Object "asset-category" "logos"
+      userBeth = Subject $ EndSubject "user" "ann"
+
+  aclResult <- assertRight "" =<< check namespaces relationTuples (logosObject, "editor") userBeth
+
+  assertEqual
+    "Beth is not an editor of asset-category:logos!"
+    (False, Map.fromList [("editor", Seq.fromList ["0 | assignee from user", "1 | ComputedSubjectSet on #assignee", "2 | _this user", "3 | _this user"])])
     aclResult
