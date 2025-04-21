@@ -36,12 +36,9 @@ testParentOwnerFolderCanWriteDocument = do
           , ("can_create_file", Single (ComputedSubjectSet "owner"))
           ,
             ( "viewer"
-            , Union $
-                Set.fromList
-                  [ This "user"
-                  , "viewer"
-                      `from` "parent"
-                  ]
+            , Union
+                (Single (This "user"))
+                (Single ("viewer" `from` "parent"))
             )
           ]
       folderNamespace = Namespace "folder" folderRelations
@@ -52,11 +49,9 @@ testParentOwnerFolderCanWriteDocument = do
           , ("parent", Single (This "folder"))
           ,
             ( "can_write"
-            , Union $
-                Set.fromList
-                  [ ComputedSubjectSet "owner"
-                  , "owner" `from` "parent"
-                  ]
+            , Union
+                (Single (ComputedSubjectSet "owner"))
+                (Single ("owner" `from` "parent"))
             )
           ]
       docNamespace = Namespace "doc" docRelations

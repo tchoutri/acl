@@ -94,7 +94,7 @@ testComputedSubjectSet = do
     assertJust $
       Map.lookup (RuleName "member") organisationNamespace.relations
 
-  (aclResult2, _) <- assertRight "" =<< runACL (expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") sncfAdminRewriteRules (RuleName "member"))
+  (aclResult2, _) <- assertRight "" =<< runACL (expandRewriteRules namespaces relationTuples (sncfOrgObject, "member") (RuleName "member") sncfAdminRewriteRules)
   assertEqual
     "Could not find user Beatrice for computed user set"
     (Set.singleton beatriceAccountSubject)

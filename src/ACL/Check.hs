@@ -46,7 +46,7 @@ check' namespaces relations (obj, rel) user =
     Nothing -> pure False
     Just namespace -> do
       let processRule ruleName rule = do
-            haystack <- expandRewriteRules namespaces relations (obj, rel) rule ruleName
+            haystack <- expandRewriteRules namespaces relations (obj, rel) ruleName rule
             pure $ user `Set.member` haystack
       case Map.lookup (RuleName rel) namespace.relations of
         Nothing -> Error.throwError $ NonExistentRule (RuleName rel)
@@ -58,25 +58,26 @@ expandRewriteRules
   => Map NamespaceId Namespace
   -> Set RelationTuple
   -> (Object, Text)
-  -> RewriteRules
   -> RuleName
+  -> RewriteRules
   -> Eff es (Set Subject)
-expandRewriteRules namespaces relations needle (Single children) ruleName = do
-  expandRewriteRuleChild namespaces relations needle ruleName children
-expandRewriteRules namespaces relations needle (Union children) ruleName = do
-  expanded <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children)
-  pure $
-    expanded
-      & Set.fromList
-      & Set.unions
-expandRewriteRules namespaces relations needle (Difference children1 children2) ruleName = do
-  set1 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children1)
-  set2 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children2)
-  pure $ Set.difference (mconcat set1) (mconcat set2)
-expandRewriteRules namespaces relations needle (Intersection children1 children2) ruleName = do
-  set1 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children1)
-  set2 <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children2)
-  pure $ Set.intersection (mconcat set1) (mconcat set2)
+expandRewriteRules namespaces relations needle ruleName (Single child) = do
+  expandRewriteRuleChild namespaces relations needle ruleName child
+expandRewriteRules namespaces relations needle ruleName (RuleSet children) = do
+  resultSet <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children)
+  pure $ mconcat resultSet
+expandRewriteRules namespaces relations needle ruleName (Union child1 child2) = do
+  set1 <- expandRewriteRules namespaces relations needle ruleName child1
+  set2 <- expandRewriteRules namespaces relations needle ruleName child2
+  pure $ Set.unions (Set.fromList [set1, set2])
+expandRewriteRules namespaces relations needle ruleName (Difference children1 children2) = do
+  set1 <- expandRewriteRules namespaces relations needle ruleName children1
+  set2 <- expandRewriteRules namespaces relations needle ruleName children2
+  pure $ Set.difference set1 set2
+expandRewriteRules namespaces relations needle ruleName (Intersection children1 children2) = do
+  set1 <- expandRewriteRules namespaces relations needle ruleName children1
+  set2 <- expandRewriteRules namespaces relations needle ruleName children2
+  pure $ Set.intersection set1 set2
 
 expandRewriteRuleChild
   :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)
@@ -125,7 +126,7 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
          in case mRewriteRules of
               Nothing -> pure Set.empty
               Just rewriteRules -> do
-                expanded <- traverse (\o -> expandRewriteRules namespaces relationTuples (o, computedRelation) rewriteRules ruleName) (Set.toList objectSet)
+                expanded <- traverse (\o -> expandRewriteRules namespaces relationTuples (o, computedRelation) ruleName rewriteRules) (Set.toList objectSet)
                 expanded
                   & Set.fromList
                   & Set.unions

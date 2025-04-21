@@ -2,7 +2,6 @@ module ACL.Test.Fixtures where
 
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Set qualified as Set
 
 import ACL.Types.Namespace
 import ACL.Types.NamespaceId
@@ -36,7 +35,7 @@ userNamespace =
 
 organisationNamespace :: Namespace
 organisationNamespace =
-  let memberRule = Union (Set.fromList [This "user", ComputedSubjectSet "admin"])
+  let memberRule = Union (Single (This "user")) (Single (ComputedSubjectSet "admin"))
       adminRule = Single (This "user")
    in Namespace
         { namespaceId = "org"

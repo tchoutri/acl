@@ -12,16 +12,21 @@ newtype RuleName = RuleName Text
 data RewriteRules
   = -- | A single rule
     Single Child
-  | -- | Return all children in the set
-    Union (Set Child)
-  | -- | Return elements of the first set not existing in the second set
+  | RuleSet (Set Child)
+  | -- | Expands all children in the set.
+    -- Corresponds to the logical @or (∨)@.
+    Union
+      RewriteRules
+      RewriteRules
+  | -- | Return elements of the first set not existing in the second set.
     Difference
-      (Set Child)
-      (Set Child)
-  | -- | Return elements that belong to both sets
+      RewriteRules
+      RewriteRules
+  | -- | Return elements that belong to both sets.
+    -- Corresponds to the logical @and (∧)@.
     Intersection
-      (Set Child)
-      (Set Child)
+      RewriteRules
+      RewriteRules
   deriving stock (Eq, Ord, Show)
 
 -- |

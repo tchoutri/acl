@@ -27,7 +27,7 @@ spec =
     ]
 
 fixtures :: (Map NamespaceId Namespace, Set RelationTuple)
-fixtures = do
+fixtures =
   let userNamespace = Namespace "user" Map.empty
       orgNamespace =
         let memberRelation = Single (This "user")
@@ -38,8 +38,8 @@ fixtures = do
             canWriteRelation = Single (ComputedSubjectSet "writer")
             canDeleteRelation =
               Intersection
-                (Set.singleton (ComputedSubjectSet "writer"))
-                (Set.singleton ("member" `from` "owner"))
+                (Single (ComputedSubjectSet "writer"))
+                (Single ("member" `from` "owner"))
          in Namespace
               { namespaceId = "document"
               , relations =
