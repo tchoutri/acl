@@ -93,6 +93,7 @@ test-suite acl-test
     ACL.Test.Fixtures
     ACL.Test.RewriteRulesTest
     ACL.Test.RewriteRulesTest.BlocklistTest
+    ACL.Test.RewriteRulesTest.CustomRolesTest
     ACL.Test.RewriteRulesTest.FolderDocumentsTest
     ACL.Test.RewriteRulesTest.MultipleRestrictionTest
     ACL.Test.RewriteRulesTest.OrgsPlansTest
