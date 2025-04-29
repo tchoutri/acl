@@ -32,11 +32,12 @@ data RewriteRules
   deriving stock (Eq, Ord, Show)
 
 instance Display RewriteRules where
-  displayBuilder (Single child) = displayBuilder child
-  displayBuilder (RuleSet children) = "RuleSet " <> displayBuilder (Set.toList children)
-  displayBuilder (Union r1 r2) = displayBuilder r1 <> " ∪ " <> displayBuilder r2
-  displayBuilder (Difference r1 r2) = displayBuilder r1 <> " ∖ " <> displayBuilder r2
-  displayBuilder (Intersection r1 r2) = displayBuilder r1 <> " ∩ " <> displayBuilder r2
+  displayPrec prec = \case
+    (Single child) -> displayBuilder child
+    (RuleSet children) -> "RuleSet " <> displayBuilder (Set.toList children)
+    (Union r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∪ " <> displayPrec 11 r2
+    (Difference r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∖ " <> displayPrec 11 r2
+    (Intersection r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∩ " <> displayPrec 11 r2
 
 -- |
 -- Examples:
@@ -60,7 +61,7 @@ data Child
 
 instance Display Child where
   displayBuilder (This namespace) = "_this " <> displayBuilder namespace
-  displayBuilder (ComputedSubjectSet relation) = "subjectSet " <> displayBuilder relation
+  displayBuilder (ComputedSubjectSet relation) = "subjectSet #" <> displayBuilder relation
   displayBuilder (TupleSetChild relation tupleset) = displayBuilder relation <> " from " <> displayBuilder tupleset
 
 -- | Use it like this: "member" `from` "team"
