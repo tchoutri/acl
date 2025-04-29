@@ -2,7 +2,6 @@ module ACL.Test.RewriteRulesTest.MultipleRestrictionTest where
 
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Test.Tasty
@@ -79,16 +78,14 @@ testComputedSubjectSetCanWrite (namespaces, relationTuples) = do
   let userCarl = Subject $ EndSubject "user" "carl"
   aclResult0 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_write") userBecky
 
-  assertEqual
+  assertBool
     "Becky is not a writer of document:planning!"
-    (True, Map.fromList [("can_write", Seq.fromList ["0 | ComputedSubjectSet on #writer"])])
     aclResult0
 
   aclResult1 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_write") userCarl
 
-  assertEqual
+  assertBool
     "Carl is not a writer of document:planning!"
-    (True, Map.fromList [("can_write", Seq.fromList ["0 | ComputedSubjectSet on #writer"])])
     aclResult1
 
 testRulesIntersectionCanDeleteBecky :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
@@ -97,12 +94,8 @@ testRulesIntersectionCanDeleteBecky (namespaces, relationTuples) = do
   let userBecky = Subject $ EndSubject "user" "becky"
   aclResult0 <- assertRight "" =<< check namespaces relationTuples (planningDoc, "can_delete") userBecky
 
-  assertEqual
+  assertBool
     "Becky is not a member of an owner org of document:planning!"
-    ( True
-    , Map.fromList
-        [("can_delete", Seq.fromList ["0 | ComputedSubjectSet on #writer", "1 | member from owner", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | _this user"])]
-    )
     aclResult0
 
 testRulesIntersectionCanDeleteCarl :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
@@ -113,5 +106,5 @@ testRulesIntersectionCanDeleteCarl (namespaces, relationTuples) = do
 
   assertEqual
     "Carl is a member of an owner org of document:planning!"
-    (False, Map.fromList [("can_delete", Seq.fromList ["0 | ComputedSubjectSet on #writer", "1 | member from owner", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | _this user"])])
+    False
     aclResult1

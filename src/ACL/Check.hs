@@ -2,22 +2,18 @@
 
 module ACL.Check where
 
-import Control.Concurrent.Counter (Counter)
+import Control.Monad.Trace.Class qualified as Tracing
 import Data.Map (Map)
 import Data.Map.Strict qualified as Map
-import Data.Sequence (Seq)
-import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
-import Data.Text qualified as Text
 import Data.Text.Display
-import Debug.Trace
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
-import Effectful.Reader.Static (Reader)
-import Effectful.State.Static.Local (State)
+import Effectful.Trace
+import Monitor.Tracing.Zipkin qualified as Tracing
 import Optics.Core
 
 import ACL.ACLEff
@@ -28,21 +24,22 @@ import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
 import ACL.Types.Subject
-import ACL.Types.Trace
 
 check
   :: Map NamespaceId Namespace
   -> Set RelationTuple
   -> (Object, Text)
   -> Subject
-  -> IO (Either CheckError (Bool, Map RuleName (Seq Text)))
-check namespaces relations (obj, rel) user =
-  if RelationTuple obj rel user `Set.member` relations
-    then pure $ Right (True, Map.singleton "direct" (Seq.singleton "_this"))
-    else runACL $ check' namespaces relations (obj, rel) user
+  -> IO (Either CheckError Bool)
+check namespaces relations (obj, rel) user = runACL $ do
+  Tracing.rootSpan alwaysSampled ("check " <> display obj <> "#" <> rel <> "@" <> display user) $ do
+    if RelationTuple obj rel user `Set.member` relations
+      then
+        Tracing.childSpan "direct _this" $ pure True
+      else check' namespaces relations (obj, rel) user
 
 check'
-  :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)
+  :: (Error CheckError :> es, Trace :> es)
   => Map NamespaceId Namespace
   -> Set RelationTuple
   -> (Object, Text)
@@ -52,7 +49,7 @@ check' namespaces relations (obj, rel) user =
   case Map.lookup obj.namespaceId namespaces of
     Nothing -> pure False
     Just namespace -> do
-      let processRule ruleName rule = do
+      let processRule ruleName rule = Tracing.childSpanWith (Tracing.addInheritedTag "rule" (display rule)) "processRule" $ do
             haystack <- expandRewriteRules namespaces relations (obj, rel) ruleName rule
             pure $ user `Set.member` haystack
       case Map.lookup (RuleName rel) namespace.relations of
@@ -61,36 +58,36 @@ check' namespaces relations (obj, rel) user =
           processRule (RuleName rel) rules
 
 expandRewriteRules
-  :: (Error CheckError :> es, IOE :> es, Reader Counter :> es, State (Map RuleName (Seq Text)) :> es)
+  :: (Error CheckError :> es, Trace :> es)
   => Map NamespaceId Namespace
   -> Set RelationTuple
   -> (Object, Text)
   -> RuleName
   -> RewriteRules
   -> Eff es (Set Subject)
-expandRewriteRules namespaces relations needle ruleName (Single child) = do
-  expandRewriteRuleChild namespaces relations needle ruleName child
-expandRewriteRules namespaces relations needle ruleName (RuleSet children) = do
-  resultSet <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children)
-  pure $ mconcat resultSet
-expandRewriteRules namespaces relations needle ruleName (Union child1 child2) = do
-  set1 <- expandRewriteRules namespaces relations needle ruleName child1
-  set2 <- expandRewriteRules namespaces relations needle ruleName child2
-  pure $ Set.unions (Set.fromList [set1, set2])
-expandRewriteRules namespaces relations needle ruleName (Difference children1 children2) = do
-  set1 <- expandRewriteRules namespaces relations needle ruleName children1
-  set2 <- expandRewriteRules namespaces relations needle ruleName children2
-  pure $ Set.difference set1 set2
-expandRewriteRules namespaces relations needle ruleName (Intersection children1 children2) = do
-  set1 <- expandRewriteRules namespaces relations needle ruleName children1
-  set2 <- expandRewriteRules namespaces relations needle ruleName children2
-  pure $ Set.intersection set1 set2
+expandRewriteRules namespaces relations needle ruleName rewriteRule = Tracing.childSpan ("Expanding " <> display rewriteRule) $
+  case rewriteRule of
+    (Single child) ->
+      expandRewriteRuleChild namespaces relations needle ruleName child
+    (RuleSet children) -> do
+      resultSet <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children)
+      pure $ mconcat resultSet
+    (Union child1 child2) -> do
+      set1 <- expandRewriteRules namespaces relations needle ruleName child1
+      set2 <- expandRewriteRules namespaces relations needle ruleName child2
+      pure $ Set.unions (Set.fromList [set1, set2])
+    Difference children1 children2 -> do
+      set1 <- expandRewriteRules namespaces relations needle ruleName children1
+      set2 <- expandRewriteRules namespaces relations needle ruleName children2
+      pure $ Set.difference set1 set2
+    Intersection children1 children2 -> do
+      set1 <- expandRewriteRules namespaces relations needle ruleName children1
+      set2 <- expandRewriteRules namespaces relations needle ruleName children2
+      pure $ Set.intersection set1 set2
 
 expandRewriteRuleChild
   :: ( Error CheckError :> es
-     , IOE :> es
-     , Reader Counter :> es
-     , State (Map RuleName (Seq Text)) :> es
+     , Trace :> es
      )
   => Map NamespaceId Namespace
   -> Set RelationTuple
@@ -100,34 +97,25 @@ expandRewriteRuleChild
   -> Eff es (Set Subject)
 expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName = \case
   This targetNamepace -> do
-    registerTrace ruleName ("_this " <> display targetNamepace)
-    relationTuples
-      & Set.filter (\r -> r.object == object && r.relationName == relationName && isEndSubject r.subject)
-      & Set.foldr'
-        ( \r acc ->
-            case r ^. #subject ^? _EndSubject of
-              Just subject -> Set.insert subject acc
-              Nothing -> acc
-        )
-        Set.empty
-      & Set.filter (\s -> s.namespaceId == targetNamepace)
-      & Set.map Subject
-      & pure
-  ComputedSubjectSet relName -> do
-    registerTrace ruleName ("ComputedSubjectSet on " <> display object <> "#" <> display relName)
+    result <- interpretRule namespaces relationTuples (object, relationName) ruleName (This targetNamepace)
+    Tracing.tag "returned_subjects" (display $ Set.toList result)
+    Tracing.tag "amount" (display $ Set.size result)
+    Tracing.tag "parent_rule" (display object <> "#" <> display ruleName)
+    pure result
+  ComputedSubjectSet relName -> Tracing.childSpan ("computed_subject_set " <> (display object <> "#" <> display relName)) $ do
     let filteredRelations = Set.filter (\r -> r.object == object) relationTuples
-    pure $ Set.map (\r -> r.subject) filteredRelations
-  TupleSetChild computedRelation tuplesetRelation -> do
-    registerTrace ruleName (computedRelation <> " from " <> tuplesetRelation)
+    let result = Set.map (\r -> r.subject) filteredRelations
+    Tracing.tag "returned_subjects" (display $ Set.toList result)
+    pure result
+  TupleSetChild computedRelation tuplesetRelation -> Tracing.childSpan (computedRelation <> " from " <> tuplesetRelation) $ do
     -- 1. Fetch all users with the (object, tuplesetRelation) key in relationTuples
     (subjectSet :: Set Subject) <-
       expandRewriteRuleChild namespaces relationTuples (object, tuplesetRelation) ruleName (ComputedSubjectSet computedRelation)
-    traceM $ Text.unpack $ "\n[" <> computedRelation <> " from " <> tuplesetRelation <> "] relations: " <> Text.intercalate ", " (Set.toList $ Set.map display subjectSet)
     -- 2. Use these users as new ojects and fetch all users that have a record for <newObjects#computedRelation> in there
     let objectSet = Set.map userToObject subjectSet
     if Set.null objectSet
       then do
-        registerTrace ruleName ("Empty objectSet for " <> computedRelation)
+        Tracing.tag "messsage" ("Empty objectSet for " <> computedRelation)
         pure Set.empty
       else do
         let newObjectsNamespaceId = (Set.elemAt 0 objectSet).namespaceId
@@ -143,3 +131,29 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
                   & Set.fromList
                   & Set.unions
                   & pure
+
+-- | Second-level function that is never called by `check`,
+--  in order to distinguish between recursive and direct calls
+--  to rules.
+interpretRule
+  :: Map NamespaceId Namespace
+  -> Set RelationTuple
+  -> (Object, Text)
+  -> RuleName
+  -> Child
+  -> Eff es (Set Subject)
+interpretRule namespaces relationTuples (object, relationName) ruleName child =
+  case child of
+    This targetNamepace -> do
+      relationTuples
+        & Set.filter (\r -> r.object == object && r.relationName == relationName && isEndSubject r.subject)
+        & Set.foldr'
+          ( \r acc ->
+              case r ^. #subject ^? _EndSubject of
+                Just subject -> Set.insert subject acc
+                Nothing -> acc
+          )
+          Set.empty
+        & Set.filter (\s -> s.namespaceId == targetNamepace)
+        & Set.map Subject
+        & pure

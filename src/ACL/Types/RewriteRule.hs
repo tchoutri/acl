@@ -1,6 +1,7 @@
 module ACL.Types.RewriteRule where
 
 import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text.Display
@@ -30,6 +31,13 @@ data RewriteRules
       RewriteRules
   deriving stock (Eq, Ord, Show)
 
+instance Display RewriteRules where
+  displayBuilder (Single child) = displayBuilder child
+  displayBuilder (RuleSet children) = "RuleSet " <> displayBuilder (Set.toList children)
+  displayBuilder (Union r1 r2) = displayBuilder r1 <> " ∪ " <> displayBuilder r2
+  displayBuilder (Difference r1 r2) = displayBuilder r1 <> " ∖ " <> displayBuilder r2
+  displayBuilder (Intersection r1 r2) = displayBuilder r1 <> " ∩ " <> displayBuilder r2
+
 -- |
 -- Examples:
 --  * `Viewer: _this` lists all users for the <object,relation> tuple
@@ -49,6 +57,11 @@ data Child
       Text
       -- ^ Tupleset Relation
   deriving stock (Eq, Ord, Show)
+
+instance Display Child where
+  displayBuilder (This namespace) = "_this " <> displayBuilder namespace
+  displayBuilder (ComputedSubjectSet relation) = "subjectSet " <> displayBuilder relation
+  displayBuilder (TupleSetChild relation tupleset) = displayBuilder relation <> " from " <> displayBuilder tupleset
 
 -- | Use it like this: "member" `from` "team"
 from :: Text -> Text -> Child
