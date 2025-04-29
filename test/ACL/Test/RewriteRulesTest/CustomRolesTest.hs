@@ -99,11 +99,11 @@ testThatAnnIsALogoEditor (namespaces, relationTuples) = do
 testThatBethNotIsALogoEditor :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
 testThatBethNotIsALogoEditor (namespaces, relationTuples) = do
   let logosObject = Object "asset-category" "logos"
-      userBeth = Subject $ EndSubject "user" "ann"
+      userBeth = Subject $ EndSubject "user" "beth"
 
   aclResult <- assertRight "" =<< check namespaces relationTuples (logosObject, "editor") userBeth
 
   assertEqual
-    "Beth is not an editor of asset-category:logos!"
-    True
+    "Beth is an editor of asset-category:logos!"
+    False
     aclResult

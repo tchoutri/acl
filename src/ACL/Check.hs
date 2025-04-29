@@ -49,7 +49,7 @@ check' namespaces relations (obj, rel) user =
   case Map.lookup obj.namespaceId namespaces of
     Nothing -> pure False
     Just namespace -> do
-      let processRule ruleName rule = Tracing.childSpanWith (Tracing.addInheritedTag "rule" (display rule)) "processRule" $ do
+      let processRule ruleName rule = Tracing.childSpanWith (Tracing.addInheritedTag "parent_rule" (display rule)) "process_rule" $ do
             haystack <- expandRewriteRules namespaces relations (obj, rel) ruleName rule
             pure $ user `Set.member` haystack
       case Map.lookup (RuleName rel) namespace.relations of
@@ -75,15 +75,18 @@ expandRewriteRules namespaces relations needle ruleName rewriteRule = Tracing.ch
     (Union child1 child2) -> do
       set1 <- expandRewriteRules namespaces relations needle ruleName child1
       set2 <- expandRewriteRules namespaces relations needle ruleName child2
-      pure $ Set.unions (Set.fromList [set1, set2])
+      let result = Set.unions (Set.fromList [set1, set2])
+      pure result
     Difference children1 children2 -> do
       set1 <- expandRewriteRules namespaces relations needle ruleName children1
       set2 <- expandRewriteRules namespaces relations needle ruleName children2
-      pure $ Set.difference set1 set2
+      let result = Set.difference set1 set2
+      pure result
     Intersection children1 children2 -> do
       set1 <- expandRewriteRules namespaces relations needle ruleName children1
       set2 <- expandRewriteRules namespaces relations needle ruleName children2
-      pure $ Set.intersection set1 set2
+      let result = Set.intersection set1 set2
+      pure result
 
 expandRewriteRuleChild
   :: ( Error CheckError :> es
@@ -100,7 +103,7 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
     result <- interpretRule namespaces relationTuples (object, relationName) ruleName (This targetNamepace)
     Tracing.tag "returned_subjects" (display $ Set.toList result)
     Tracing.tag "amount" (display $ Set.size result)
-    Tracing.tag "parent_rule" (display object <> "#" <> display ruleName)
+    Tracing.tag "rule" (display object <> "#" <> display relationName)
     pure result
   ComputedSubjectSet relName -> Tracing.childSpan ("computed_subject_set " <> (display object <> "#" <> display relName)) $ do
     let filteredRelations = Set.filter (\r -> r.object == object) relationTuples
