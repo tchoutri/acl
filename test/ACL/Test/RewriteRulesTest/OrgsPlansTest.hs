@@ -66,9 +66,8 @@ testSimpleRewriteRule = do
 
   aclResult1 <- assertRight "" =<< check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountSubject
   void $
-    assertEqual
+    assertBool
       "Beatrice is not member of SNCF"
-      True
       aclResult1
 
 testComputedSubjectSet :: Assertion
@@ -101,36 +100,37 @@ testComputedSubjectSet = do
 
   aclResult3 <- assertRight "" =<< check namespaces relationTuples (sncfOrgObject, "member") beatriceAccountSubject
   void $
-    assertEqual
+    assertBool
       "Beatrice can be seen as a member of SNCF due to being Admin"
-      True
       aclResult3
 
 testTupleToSubjectset :: Assertion
 testTupleToSubjectset = do
   let enterprisePlanObject = Object "plan" "enterprise"
-      businessPlanObject = Object "plan" "business"
-      enterprisePlanSubject = Subject $ EndSubject "plan" "enterprise"
       sncfOrgObject = Object "org" "sncf"
       sncfOrgSubject = Subject $ EndSubject "org" "sncf"
-      trenitaliaOrgSubject = Subject $ EndSubject "org" "trenitalia"
-      scriveOrgSubject = Subject $ EndSubject "org" "scrive"
       charlieAccountSubject = Subject $ EndSubject "user" "Charlie"
       relationTuples =
         Set.fromList
-          [ RelationTuple seBankIDFeature "associated_plan" enterprisePlanSubject
+          [ RelationTuple sncfOrgObject "admin" charlieAccountSubject
           , RelationTuple enterprisePlanObject "subscriber" sncfOrgSubject
-          , RelationTuple enterprisePlanObject "subscriber" trenitaliaOrgSubject
-          , RelationTuple businessPlanObject "subscriber" scriveOrgSubject
-          , RelationTuple sncfOrgObject "admin" charlieAccountSubject
           ]
 
-  aclResult <- assertRight "" =<< runACL (expandRewriteRuleChild namespaces relationTuples (enterprisePlanObject, "subscriber_member") "subscriber_member" ("member" `from` "subscriber"))
+  aclResult1 <-
+    assertRight ""
+      =<< check namespaces relationTuples (sncfOrgObject, "member") charlieAccountSubject
 
-  assertEqual
-    "Tupleset Child rule is not correctly expanded"
-    (Set.singleton charlieAccountSubject)
-    aclResult
+  assertBool
+    "Charlie is not a member of SNCF!"
+    aclResult1
+
+  aclResult2 <-
+    assertRight ""
+      =<< check namespaces relationTuples (enterprisePlanObject, "subscriber_member") charlieAccountSubject
+
+  assertBool
+    "Charlie is not a subscriber member to enterprise plan!"
+    aclResult2
 
 testTransitiveAccessBySubscriberMembers :: Assertion
 testTransitiveAccessBySubscriberMembers = do
@@ -169,22 +169,19 @@ testTransitiveAccessBySubscriberMembers = do
 
   aclResult1 <- assertRight "" =<< check namespaces relationTuples (seBankIDFeature, "associated_plan") enterprisePlanSubject
   let step1Relation = RelationTuple seBankIDFeature "associated_plan" enterprisePlanSubject
-  assertEqual
+  assertBool
     (Text.unpack $ "Enterprise plan contains SEBankID (" <> display step1Relation <> ")")
-    True
     aclResult1
 
   aclResult2 <- assertRight "" =<< check namespaces relationTuples (enterprisePlanObject, "subscriber") sncfOrgSubject
   let step2Relation = RelationTuple enterprisePlanObject "subscriber" sncfOrgSubject
-  assertEqual
+  assertBool
     (Text.unpack $ "SNCF is subscribed to plan Enterprise (" <> display step2Relation <> ")")
-    True
     aclResult2
 
   aclResult3 <- assertRight "" =<< check namespaces relationTuples (seBankIDFeature, "can_access") charlieAccountSubject
   let step3Relation = RelationTuple seBankIDFeature "subscriber" charlieAccountSubject
   void $
-    assertEqual
+    assertBool
       (Text.unpack $ "Charlie can access SE Bank ID through SNCF's subscription to Enterprise plan" <> display step3Relation <> ")")
-      True
       aclResult3

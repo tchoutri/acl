@@ -7,8 +7,8 @@ import Test.Tasty.HUnit
 import ACL.Test.Fixtures
 import ACL.Types.Object (Object (..))
 import ACL.Types.RelationTuple
-import ACL.Types.Subject
 import ACL.Types.RewriteRule
+import ACL.Types.Subject
 
 spec :: TestTree
 spec =
@@ -51,9 +51,10 @@ displayObjectRelationSubjectSetRelation = do
 
 displayRewriteRulesUnion :: Assertion
 displayRewriteRulesUnion = do
-  let rule = Union
-                (Single (This "user"))
-                (Single ("viewer" `from` "parent"))
+  let rule =
+        Union
+          (Single (This "user"))
+          (Single ("viewer" `from` "parent"))
 
   assertEqual
     "Display instance is not correct"
@@ -62,12 +63,13 @@ displayRewriteRulesUnion = do
 
 displayRewriteRulesUnionOfIntersection :: Assertion
 displayRewriteRulesUnionOfIntersection = do
-  let rule = Union
-                ( Intersection
-                    (Single (This "user"))
-                    (Single ("assignee" `from` "role"))
-                )
-                (Single (ComputedSubjectSet "editor"))
+  let rule =
+        Union
+          ( Intersection
+              (Single (This "user"))
+              (Single ("assignee" `from` "role"))
+          )
+          (Single (ComputedSubjectSet "editor"))
 
   assertEqual
     "Display instance is not correct"

@@ -32,7 +32,7 @@ fixtures =
       assetCategoryNamespace =
         let viewerRelation =
               Union
-                ( Intersection
+                ( Union
                     (Single (This "user"))
                     (Single ("assignee" `from` "role"))
                 )

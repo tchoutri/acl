@@ -69,9 +69,6 @@ expandRewriteRules namespaces relations needle ruleName rewriteRule = Tracing.ch
   case rewriteRule of
     (Single child) ->
       expandRewriteRuleChild namespaces relations needle ruleName child
-    (RuleSet children) -> do
-      resultSet <- traverse (expandRewriteRuleChild namespaces relations needle ruleName) (Set.toList children)
-      pure $ mconcat resultSet
     (Union child1 child2) -> do
       set1 <- expandRewriteRules namespaces relations needle ruleName child1
       set2 <- expandRewriteRules namespaces relations needle ruleName child2
@@ -103,17 +100,30 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
     result <- interpretRule namespaces relationTuples (object, relationName) ruleName (This targetNamepace)
     Tracing.tag "returned_subjects" (display $ Set.toList result)
     Tracing.tag "amount" (display $ Set.size result)
-    Tracing.tag "rule" (display object <> "#" <> display relationName)
+    Tracing.tag "relation" (display object <> "#" <> display relationName)
+    Tracing.tag "rule" (display object <> "#" <> display ruleName)
     pure result
   ComputedSubjectSet relName -> Tracing.childSpan ("computed_subject_set " <> (display object <> "#" <> display relName)) $ do
-    let filteredRelations = Set.filter (\r -> r.object == object) relationTuples
-    let result = Set.map (\r -> r.subject) filteredRelations
+    let filteredRelations = Set.filter (\r -> r.object == object && r.relationName == relName) relationTuples
+    let result =
+          filteredRelations
+            & Set.map (\r -> r.subject)
     Tracing.tag "returned_subjects" (display $ Set.toList result)
+    Tracing.tag "filtered_relations" (display $ Set.toList filteredRelations)
+    Tracing.tag "amount" (display $ Set.size result)
+    Tracing.tag "relation" (display object <> "#" <> display relationName)
+    Tracing.tag "rule" (display object <> "#" <> display ruleName)
     pure result
   TupleSetChild computedRelation tuplesetRelation -> Tracing.childSpan (computedRelation <> " from " <> tuplesetRelation) $ do
     -- 1. Fetch all users with the (object, tuplesetRelation) key in relationTuples
-    (subjectSet :: Set Subject) <-
-      expandRewriteRuleChild namespaces relationTuples (object, tuplesetRelation) ruleName (ComputedSubjectSet computedRelation)
+    (subjectSet :: Set Subject) <- Tracing.childSpan "Getting tuple_set" $ do
+      Tracing.tag "tuple_set" tuplesetRelation
+      let result =
+            relationTuples
+              & Set.filter (\r -> r.object == object && r.relationName == computedRelation)
+              & Set.map (\r -> r.subject)
+      Tracing.tag "subject_set" (display $ Set.toList result)
+      pure result
     -- 2. Use these users as new ojects and fetch all users that have a record for <newObjects#computedRelation> in there
     let objectSet = Set.map userToObject subjectSet
     if Set.null objectSet
@@ -130,10 +140,15 @@ expandRewriteRuleChild namespaces relationTuples (object, relationName) ruleName
               Nothing -> pure Set.empty
               Just rewriteRules -> do
                 expanded <- traverse (\o -> expandRewriteRules namespaces relationTuples (o, computedRelation) ruleName rewriteRules) (Set.toList objectSet)
-                expanded
-                  & Set.fromList
-                  & Set.unions
-                  & pure
+                let result =
+                      expanded
+                        & Set.fromList
+                        & Set.unions
+                Tracing.tag "returned_subjects" (display $ Set.toList result)
+                Tracing.tag "amount" (display $ Set.size result)
+                Tracing.tag "relation" (display object <> "#" <> display relationName)
+                Tracing.tag "rule" (display object <> "#" <> display ruleName)
+                pure result
 
 -- | Second-level function that is never called by `check`,
 --  in order to distinguish between recursive and direct calls

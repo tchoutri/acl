@@ -25,7 +25,13 @@ testThatBlocklistWorks :: Assertion
 testThatBlocklistWorks = do
   let userNamespace = Namespace "user" Map.empty
   let documentNamespace =
-        let editorRelation = Difference (RuleSet (Set.fromList [This "user", "member" `from` "team"])) (Single (ComputedSubjectSet "blocked"))
+        let editorRelation =
+              Difference
+                ( Union
+                    (Single (This "user"))
+                    (Single ("member" `from` "team"))
+                )
+                (Single (ComputedSubjectSet "blocked"))
             blockedRelation = Single (This "user")
          in Namespace
               { namespaceId = "document"

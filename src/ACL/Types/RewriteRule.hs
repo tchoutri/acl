@@ -1,7 +1,5 @@
 module ACL.Types.RewriteRule where
 
-import Data.Set (Set)
-import Data.Set qualified as Set
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Text.Display
@@ -14,7 +12,6 @@ newtype RuleName = RuleName Text
 data RewriteRules
   = -- | A single rule
     Single Child
-  | RuleSet (Set Child)
   | -- | Expands all children in the set.
     -- Corresponds to the logical @or (∨)@.
     Union
@@ -34,7 +31,6 @@ data RewriteRules
 instance Display RewriteRules where
   displayPrec prec = \case
     (Single child) -> displayBuilder child
-    (RuleSet children) -> "RuleSet " <> displayBuilder (Set.toList children)
     (Union r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∪ " <> displayPrec 11 r2
     (Difference r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∖ " <> displayPrec 11 r2
     (Intersection r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∩ " <> displayPrec 11 r2
@@ -56,7 +52,7 @@ data Child
       Text
       -- ^ Computed Relation
       Text
-      -- ^ Tupleset Relation
+      -- ^ Tupleset
   deriving stock (Eq, Ord, Show)
 
 instance Display Child where

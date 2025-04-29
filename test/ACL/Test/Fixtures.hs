@@ -35,7 +35,10 @@ userNamespace =
 
 organisationNamespace :: Namespace
 organisationNamespace =
-  let memberRule = Union (Single (This "user")) (Single (ComputedSubjectSet "admin"))
+  let memberRule =
+        Union
+          (Single (This "user"))
+          (Single (ComputedSubjectSet "admin"))
       adminRule = Single (This "user")
    in Namespace
         { namespaceId = "org"
