@@ -22,7 +22,8 @@ spec =
     "Custom Roles"
     [ testCase "Ann is assigned to role media-manager" (testThatAnnIsAMediaManager fixtures)
     , testCase "Ann is an editor of asset-category:logos" (testThatAnnIsALogoEditor fixtures)
-    , testCase "Beth is not an editor of asset-category:logos" (testThatBethNotIsALogoEditor fixtures)
+    , testCase "Beth is a viewer of asset-category:logos" (testThatBethIsALogoViewer fixtures)
+    , testCase "Beth is not an editor of asset-category:logos" (testThatBethIsNotALogoEditor fixtures)
     ]
 
 fixtures :: (Map NamespaceId Namespace, Set RelationTuple)
@@ -96,8 +97,17 @@ testThatAnnIsALogoEditor (namespaces, relationTuples) = do
     True
     aclResult
 
-testThatBethNotIsALogoEditor :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
-testThatBethNotIsALogoEditor (namespaces, relationTuples) = do
+testThatBethIsALogoViewer :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
+testThatBethIsALogoViewer (namespaces, relationTuples) = do
+  let logosObject = Object "asset-category" "logos"
+      userBeth = Subject $ EndSubject "user" "beth"
+  aclResult <- assertRight "" =<< check namespaces relationTuples (logosObject, "viewer") userBeth
+  assertBool
+    "Beth is not a viewer of asset-category:logos!"
+    aclResult
+
+testThatBethIsNotALogoEditor :: (Map NamespaceId Namespace, Set RelationTuple) -> Assertion
+testThatBethIsNotALogoEditor (namespaces, relationTuples) = do
   let logosObject = Object "asset-category" "logos"
       userBeth = Subject $ EndSubject "user" "beth"
 
