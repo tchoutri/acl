@@ -52,6 +52,7 @@ library
   exposed-modules:
     ACL.ACLEff
     ACL.Check
+    ACL.Tracing
     ACL.Types.CheckError
     ACL.Types.Namespace
     ACL.Types.NamespaceId
@@ -60,16 +61,18 @@ library
     ACL.Types.RelationTuple
     ACL.Types.RewriteRule
     ACL.Types.Subject
-    ACL.Types.Trace
 
   build-depends:
     atomic-counter,
     base ^>=4.20.0.0,
     containers,
     effectful-core,
+    network,
     optics-core,
     text,
     text-display,
+    tracing,
+    tracing-effectful,
     vector,
 
   hs-source-dirs: src
@@ -93,6 +96,7 @@ test-suite acl-test
     ACL.Test.Fixtures
     ACL.Test.RewriteRulesTest
     ACL.Test.RewriteRulesTest.BlocklistTest
+    ACL.Test.RewriteRulesTest.CustomRolesTest
     ACL.Test.RewriteRulesTest.FolderDocumentsTest
     ACL.Test.RewriteRulesTest.MultipleRestrictionTest
     ACL.Test.RewriteRulesTest.OrgsPlansTest

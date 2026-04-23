@@ -10,8 +10,11 @@ repl: ## Start a REPL
 test: ## Run the tests
 	@cabal test
 
+watch-test: ## Run ghciwatch to reload the test suite upon change
+	@ghciwatch --watch acl.cabal --watch src --watch test --command="cabal repl acl-test"
+
 lint: ## Run hlint
-	@find -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
+	@find ./src ./test -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
 style: ## Run formatter
 	@cabal-gild --io acl.cabal
