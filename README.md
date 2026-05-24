@@ -89,7 +89,7 @@ In order to further reduce the amount of tuples stored, and lower the maintenanc
 For instance, the `reader` relation can be defined in terms of the membership to a group:
 
 ```
-doc:document1#reader@group:guests#member
+doc:document1#reader@(group:guests#member)
 ```
 
 [Zanzibar]: https://storage.googleapis.com/gweb-research2023-media/pubtools/5068.pdf
