@@ -1,36 +1,27 @@
 module ACL.ACLEff where
 
-import Control.Concurrent.Counter (Counter)
-import Control.Concurrent.Counter qualified as Counter
 import Data.Function
-import Data.Map.Strict (Map)
-import Data.Map.Strict qualified as Map
-import Data.Sequence (Seq)
-import Data.Text (Text)
 import Effectful
 import Effectful.Error.Static (Error)
 import Effectful.Error.Static qualified as Error
-import Effectful.Reader.Static (Reader)
-import Effectful.Reader.Static qualified as Reader
-import Effectful.State.Static.Local (State)
-import Effectful.State.Static.Local qualified as State
+import Effectful.Trace
+import Effectful.Trace qualified as Tracing
+import Monitor.Tracing.Zipkin
 
+import ACL.Tracing qualified as Tracing
 import ACL.Types.CheckError
-import ACL.Types.RewriteRule
 
 type ACLEff =
   Eff
-    '[ State (Map RuleName (Seq Text))
+    '[ Trace
      , Error CheckError
-     , Reader Counter
      , IOE
      ]
 
-runACL :: ACLEff a -> IO (Either CheckError (a, Map RuleName (Seq Text)))
+runACL :: ACLEff a -> IO (Either CheckError a)
 runACL action = do
-  counter <- Counter.new 0
+  zipkin <- liftIO $ Tracing.newZipkin "localhost"
   action
-    & State.runState Map.empty
+    & Tracing.runTrace zipkin.zipkinTracer
     & Error.runErrorNoCallStack
-    & Reader.runReader counter
     & runEff
