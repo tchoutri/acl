@@ -11,7 +11,7 @@ test: ## Run the tests
 	@cabal test
 
 lint: ## Run hlint
-	@find -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
+	@find src test -name "*.hs" | xargs -P $(PROCS) -I {} hlint --refactor-options="-i" --refactor {}
 
 style: ## Run formatter
 	@cabal-gild --io acl.cabal

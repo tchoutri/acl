@@ -52,6 +52,7 @@ library
   exposed-modules:
     ACL.ACLEff
     ACL.Check
+    ACL.Tracing
     ACL.Types.CheckError
     ACL.Types.Namespace
     ACL.Types.NamespaceId
@@ -67,9 +68,12 @@ library
     base ^>=4.20.0.0,
     containers,
     effectful-core,
+    network,
     optics-core,
     text,
     text-display,
+    tracing,
+    tracing-effectful,
     vector,
 
   hs-source-dirs: src

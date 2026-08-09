@@ -1,28 +1,39 @@
 module ACL.Types.RewriteRule where
 
-import Data.Set (Set)
 import Data.String (IsString)
 import Data.Text (Text)
+import Data.Text.Display
 
 import ACL.Types.NamespaceId
 
 newtype RuleName = RuleName Text
-  deriving newtype (Eq, IsString, Ord, Show)
+  deriving newtype (Display, Eq, IsString, Ord, Show)
 
 data RewriteRules
   = -- | A single rule
     Single Child
-  | -- | Return all children in the set
-    Union (Set Child)
-  | -- | Return elements of the first set not existing in the second set
+  | -- | Expands all children in the set.
+    -- Corresponds to the logical @or (∨)@.
+    Union
+      RewriteRules
+      RewriteRules
+  | -- | Return elements of the first set not existing in the second set.
     Difference
-      (Set Child)
-      (Set Child)
-  | -- | Return elements that belong to both sets
+      RewriteRules
+      RewriteRules
+  | -- | Return elements that belong to both sets.
+    -- Corresponds to the logical @and (∧)@.
     Intersection
-      (Set Child)
-      (Set Child)
+      RewriteRules
+      RewriteRules
   deriving stock (Eq, Ord, Show)
+
+instance Display RewriteRules where
+  displayPrec prec = \case
+    (Single child) -> displayBuilder child
+    (Union r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∪ " <> displayPrec 11 r2
+    (Difference r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∖ " <> displayPrec 11 r2
+    (Intersection r1 r2) -> displayParen (prec > 10) $ displayPrec 11 r1 <> " ∩ " <> displayPrec 11 r2
 
 -- |
 -- Examples:
@@ -41,8 +52,13 @@ data Child
       Text
       -- ^ Computed Relation
       Text
-      -- ^ Tupleset Relation
+      -- ^ Tupleset
   deriving stock (Eq, Ord, Show)
+
+instance Display Child where
+  displayBuilder (This namespace) = "_this " <> displayBuilder namespace
+  displayBuilder (ComputedSubjectSet relation) = "subjectSet #" <> displayBuilder relation
+  displayBuilder (TupleSetChild relation tupleset) = displayBuilder relation <> " from " <> displayBuilder tupleset
 
 -- | Use it like this: "member" `from` "team"
 from :: Text -> Text -> Child

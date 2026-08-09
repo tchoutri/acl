@@ -1,7 +1,6 @@
 module ACL.Test.RewriteRulesTest.BlocklistTest where
 
-import Data.Map.Strict qualified as Map
-import Data.Sequence qualified as Seq
+import Data.Map qualified as Map
 import Data.Set qualified as Set
 import Test.Tasty
 import Test.Tasty.HUnit
@@ -10,6 +9,7 @@ import ACL.ACLEff
 import ACL.Check
 import ACL.Test.Utils
 import ACL.Types.Namespace
+import ACL.Types.NamespaceId
 import ACL.Types.Object
 import ACL.Types.RelationTuple
 import ACL.Types.RewriteRule
@@ -19,62 +19,119 @@ spec :: TestTree
 spec =
   testGroup
     "Blocklist"
-    [ testCase "Implement blocklist model" testThatBlocklistWorks
+    [ testCase "Checking that team:product#member@user:becky" testThatBeckyIsMemberOfTeamProduct
+    , testCase "Checking that document:planning#editor@user:becky" testThatBeckyIsEditorOfDocumentPlanning
+    , testCase "Checking that document:planning#editor@user:carl is false" testThatCarlIsBlockedFromEditingDocumentPlanning
     ]
 
-testThatBlocklistWorks :: Assertion
-testThatBlocklistWorks = do
-  let userNamespace = Namespace "user" Map.empty
-  let documentNamespace =
-        let editorRelation = Difference (Set.fromList [This "user", "member" `from` "team"]) (Set.singleton (ComputedSubjectSet "blocked"))
-            blockedRelation = Single (This "user")
-         in Namespace
-              { namespaceId = "document"
-              , relations =
-                  Map.fromList
-                    [ ("editor", editorRelation)
-                    , ("blocked", blockedRelation)
-                    ]
-              }
-  let memberRelation = Single (This "user")
-  let teamNamespace =
-        Namespace
-          { namespaceId = "document"
-          , relations = Map.fromList [("member", memberRelation)]
-          }
-  let teamProduct = Object "team" "product"
-  let documentPlanning = Object "document" "planning"
-  let userBecky = Subject $ EndSubject "user" "becky"
-  let userCarl = Subject $ EndSubject "user" "carl"
-  let namespaces =
-        Map.fromList
-          [ ("user", userNamespace)
-          , ("document", documentNamespace)
-          , ("team", teamNamespace)
-          ]
-  let relationTuples =
-        Set.fromList
-          [ RelationTuple documentPlanning "editor" (SubjectSet $ SubjectSetTuple teamProduct (Just "member"))
-          , RelationTuple documentPlanning "blocked" userCarl
-          , RelationTuple teamProduct "member" userBecky
-          , RelationTuple teamProduct "member" userCarl
-          ]
-
-  aclResult0 <- assertRight "" =<< runACL (expandRewriteRules namespaces relationTuples (teamProduct, "member") memberRelation "member")
+testThatBeckyIsMemberOfTeamProduct :: Assertion
+testThatBeckyIsMemberOfTeamProduct = do
+  aclResult <-
+    assertRight ""
+      =<< runACL
+        ( expandRewriteRules
+            namespaces
+            relationTuples
+            teamProduct
+            "member"
+            (RuleName "member")
+            memberRelation
+        )
 
   assertEqual
-    "Becky is not part of the members of team:product!"
-    (Set.fromList [Subject (EndSubject "user" "becky"), Subject (EndSubject "user" "carl")], Map.fromList [("member", Seq.fromList ["0 | _this user"])])
-    aclResult0
+    "Becky should be part of the members of team:product"
+    (Set.fromList [Subject (EndSubject "user" "becky"), Subject (EndSubject "user" "carl")])
+    aclResult
 
-  aclResult1 <- assertRight "" =<< check namespaces relationTuples (documentPlanning, "editor") userBecky
+testThatBeckyIsEditorOfDocumentPlanning :: Assertion
+testThatBeckyIsEditorOfDocumentPlanning = do
+  aclResult <-
+    assertRight ""
+      =<< runACL
+        ( expandRewriteRules
+            namespaces
+            relationTuples
+            documentPlanning
+            "editor"
+            (RuleName "editor")
+            editorRelation
+        )
+
   assertEqual
-    "is user:becky related to document:planning as editor?"
-    (True, Map.fromList [("editor", Seq.fromList ["0 | _this user", "1 | member from team", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | ComputedSubjectSet on #blocked"])])
-    aclResult1
+    ""
+    (Set.fromList [userBecky])
+    aclResult
 
-  aclResult2 <- assertRight "" =<< check namespaces relationTuples (documentPlanning, "editor") userCarl
+testThatCarlIsBlockedFromEditingDocumentPlanning :: Assertion
+testThatCarlIsBlockedFromEditingDocumentPlanning = do
+  aclResult <- assertRight "" =<< check namespaces relationTuples documentPlanning "editor" userCarl
+
   assertEqual
     "is user:carl related to document:planning as editor?"
-    (False, Map.fromList [("editor", Seq.fromList ["0 | _this user", "1 | member from team", "2 | ComputedSubjectSet on #member", "3 | _this user", "4 | _this user", "5 | ComputedSubjectSet on #blocked"])])
-    aclResult2
+    False
+    aclResult
+
+userNamespace :: Namespace
+userNamespace = Namespace "user" Map.empty
+
+blockedRelation :: RewriteRules
+blockedRelation = Single (This "user")
+
+memberRelation :: RewriteRules
+memberRelation = Single (This "user")
+
+editorRelation :: RewriteRules
+editorRelation =
+  Difference
+    ( Union
+        (Single (This "user"))
+        (Single ("member" `from` "team"))
+    )
+    (Single (ComputedSubjectSet "blocked"))
+
+documentNamespace :: Namespace
+documentNamespace =
+  Namespace
+    { namespaceId = "document"
+    , relations =
+        Map.fromList
+          [ ("editor", editorRelation)
+          , ("blocked", blockedRelation)
+          ]
+    }
+
+teamNamespace :: Namespace
+teamNamespace =
+  Namespace
+    { namespaceId = "team"
+    , relations = Map.fromList [("member", memberRelation)]
+    }
+
+teamProduct :: Object
+teamProduct = Object "team" "product"
+
+documentPlanning :: Object
+documentPlanning = Object "document" "planning"
+
+userBecky :: Subject
+userBecky = Subject $ EndSubject "user" "becky"
+
+userCarl :: Subject
+userCarl = Subject $ EndSubject "user" "carl"
+
+namespaces :: Map.Map NamespaceId Namespace
+namespaces =
+  Map.fromList
+    [ ("user", userNamespace)
+    , ("document", documentNamespace)
+    , ("team", teamNamespace)
+    ]
+
+relationTuples :: Set.Set RelationTuple
+relationTuples =
+  Set.fromList
+    [ RelationTuple documentPlanning "editor" (SubjectSet $ SubjectSetTuple teamProduct (Just "member")) -- document:planning#editor@team:product#member
+    , RelationTuple documentPlanning "blocked" userCarl
+    , RelationTuple teamProduct "member" userBecky
+    , RelationTuple teamProduct "member" userCarl
+    ]
